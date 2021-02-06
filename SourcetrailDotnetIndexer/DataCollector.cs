@@ -14,6 +14,10 @@ namespace SourcetrailDotnetIndexer
 
         public DataCollector(string outputFileName)
         {
+            if (string.IsNullOrWhiteSpace(outputFileName))
+                throw new ArgumentException("A valid filename is required for the sourcetrail database", 
+                                            nameof(outputFileName));
+
             sourcetraildb.open(outputFileName);
             sourcetraildb.clear();
             sourcetraildb.beginTransaction();
@@ -28,6 +32,10 @@ namespace SourcetrailDotnetIndexer
 
         public int CollectSymbol(string fullName, SymbolKind kind, string prefix = "", string postfix = "")
         {
+            if (string.IsNullOrWhiteSpace(fullName))
+                throw new ArgumentNullException("Symbol name may not be null or empty or consist only of whitespace characters",
+                                                nameof(fullName));
+
             // caching the collected symbols drastically reduces execution time
             var identifier = prefix + fullName + postfix;
             if (collectedSymbols.TryGetValue(identifier, out int symbolId))
@@ -45,9 +53,12 @@ namespace SourcetrailDotnetIndexer
             return symbolId;
         }
 
-        public int CollectReference(int soureSymbolId, int referenceSymbolId, ReferenceKind referenceKind)
+        public int CollectReference(int sourceSymbolId, int referenceSymbolId, ReferenceKind referenceKind)
         {
-            return sourcetraildb.recordReference(soureSymbolId, referenceSymbolId, referenceKind);
+            if (sourceSymbolId <= 0 || referenceSymbolId <= 0)
+                throw new ArgumentException("A symbol-id must be greater than zero");
+
+            return sourcetraildb.recordReference(sourceSymbolId, referenceSymbolId, referenceKind);
         }
     }
 }

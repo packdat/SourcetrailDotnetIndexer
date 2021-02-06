@@ -18,17 +18,20 @@ namespace SourcetrailDotnetIndexer
 
         public SourcetrailDotnetIndexer(Assembly assembly, NamespaceFilter nameFilter)
         {
-            this.assembly = assembly;
-            this.nameFilter = nameFilter;
+            this.assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
+            this.nameFilter = nameFilter ?? throw new ArgumentNullException(nameof(nameFilter));
         }
 
         public void Index(string outputFileName)
         {
+            // create the Sourcetrail data collector
             dataCollector = new DataCollector(outputFileName);
 
+            // set up the type handler
             typeHandler = new TypeHandler(assembly, nameFilter, dataCollector);
             typeHandler.MethodCollected += (sender, args) => collectedMethods.Add(args.CollectedMethod);
 
+            // set up the visitor for parsed methods
             referenceVisitor = new MethodReferenceVisitor(assembly, typeHandler, dataCollector);
             referenceVisitor.ParseMethod += (sender, args) => CollectReferencesFromILCode(
                 args.CollectedMethod.Method, args.CollectedMethod.MethodId, args.CollectedMethod.ClassId);

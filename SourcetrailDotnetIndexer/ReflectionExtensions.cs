@@ -45,7 +45,6 @@ namespace SourcetrailDotnetIndexer
             var match = rxInternName.Match(type.Name);
             if (!match.Success || type.DeclaringType == null)
                 return false;
-            var name = match.Groups["name"].Value;
             var found = type.DeclaringType.GetMethods(flags).Any(m => m == outerMethod);
             asyncWorker = type.GetMethod("MoveNext", flags);     // this method executes the state machine
             return found && asyncWorker != null;
@@ -211,7 +210,10 @@ namespace SourcetrailDotnetIndexer
                 memberKind = SymbolKind.SYMBOL_METHOD;
                 prefix = ctor.GetModifiers();
                 if (ctor.IsGenericMethod)
-                    postfix += "<" + string.Join(", ", ctor.GetGenericArguments().Select(a => NameHelper.TranslateTypeName(a, true))) + ">";
+                    postfix += "<" 
+                        + string.Join(", ", ctor.GetGenericArguments()
+                                            .Select(a => NameHelper.TranslateTypeName(a, true))) 
+                        + ">";
                 postfix += SerializeParameters(ctor.GetParameters());
                 return ctor.DeclaringType.GetPrettyName() + ctor.Name;
             }
@@ -293,6 +295,14 @@ namespace SourcetrailDotnetIndexer
             return null;
         }
 
+        /// <summary>
+        /// Determines whether the specified method is an accessor (getter/setter) for a property or an event
+        /// </summary>
+        /// <param name="method">The method to check</param>
+        /// <param name="name">The unmangled name of the method</param>
+        /// <param name="prefix">Receives the modifiers and property/event-handler type</param>
+        /// <param name="propertyOrEventName">Receives the name of the property or event</param>
+        /// <returns>true, if the specified method is an accessor-method, false otherwise</returns>
         private static bool IsPropertyOrEventMethod(MethodBase method, string name, out string prefix, out string propertyOrEventName)
         {
             if (name.StartsWith("get_") || name.StartsWith("set_"))
@@ -339,7 +349,7 @@ namespace SourcetrailDotnetIndexer
                     sb.Append(", ");
                 sb.AppendFormat("{0} {1}", NameHelper.TranslateTypeName(parameter.ParameterType), parameter.Name);
             }
-            sb.Append(")");
+            sb.Append(')');
             return sb.ToString();
         }
 

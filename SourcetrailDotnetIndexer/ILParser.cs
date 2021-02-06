@@ -244,7 +244,7 @@ namespace SourcetrailDotnetIndexer
         /// <param name="visitor">The visitor that receives notifications of found references in the IL-code</param>
         public ILParser(MethodReferenceVisitor visitor)
         {
-            referenceVisitor = visitor;
+            referenceVisitor = visitor ?? throw new ArgumentNullException(nameof(visitor));
         }
 
         /// <summary>
@@ -334,11 +334,19 @@ namespace SourcetrailDotnetIndexer
                     }
                     else if (opcode.OperandType == OperandType.InlineMethod)
                     {
-                        var mb = method.Module.ResolveMethod(
-                                BitConverter.ToInt32(il, i + opcode.Size),
-                                t.IsGenericType || t.IsGenericTypeDefinition ? method.DeclaringType.GetGenericArguments() : null,
-                                method.IsGenericMethod || method.IsGenericMethodDefinition ? method.GetGenericArguments() : null);
-                        referenceVisitor.VisitMethodReference(method, mb, methodId, classId);
+                        try
+                        {
+                            var mb = method.Module.ResolveMethod(
+                                    BitConverter.ToInt32(il, i + opcode.Size),
+                                    t.IsGenericType || t.IsGenericTypeDefinition ? method.DeclaringType.GetGenericArguments() : null,
+                                    method.IsGenericMethod || method.IsGenericMethodDefinition ? method.GetGenericArguments() : null);
+                            referenceVisitor.VisitMethodReference(mb, methodId, classId);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Cannot resolve inline method in method '{0}.{1}': {2}",
+                                method.DeclaringType.Name, method.Name, ex.Message);
+                        }
                     }
                 }
                 i += opcode.Size;
