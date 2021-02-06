@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\SourcetrailDotnetIndexer\CollectedMethod.cs" Link="CollectedMethod.cs" />
+    <Compile Include="..\SourcetrailDotnetIndexer\DataCollector.cs" Link="DataCollector.cs" />
+    <Compile Include="..\SourcetrailDotnetIndexer\EventArgs.cs" Link="EventArgs.cs" />
+    <Compile Include="..\SourcetrailDotnetIndexer\ILParser.cs" Link="ILParser.cs" />
+    <Compile Include="..\SourcetrailDotnetIndexer\MethodReferenceVisitor.cs" Link="MethodReferenceVisitor.cs" />
+    <Compile Include="..\SourcetrailDotnetIndexer\NameHelper.cs" Link="NameHelper.cs" />
+    <Compile Include="..\SourcetrailDotnetIndexer\NamespaceFilter.cs" Link="NamespaceFilter.cs" />
+    <Compile Include="..\SourcetrailDotnetIndexer\Program.Shared.cs" Link="Program.Shared.cs" />
+    <Compile Include="..\SourcetrailDotnetIndexer\ReflectionExtensions.cs" Link="ReflectionExtensions.cs" />
+    <Compile Include="..\SourcetrailDotnetIndexer\SourcetrailDotnetIndexer.cs" Link="SourcetrailDotnetIndexer.cs" />
+    <Compile Include="..\SourcetrailDotnetIndexer\Sourcetrail\DefinitionKind.cs" Link="Sourcetrail\DefinitionKind.cs" />
+    <Compile Include="..\SourcetrailDotnetIndexer\Sourcetrail\ReferenceKind.cs" Link="Sourcetrail\ReferenceKind.cs" />
+    <Compile Include="..\SourcetrailDotnetIndexer\Sourcetrail\sourcetraildb.cs" Link="Sourcetrail\sourcetraildb.cs" />
+    <Compile Include="..\SourcetrailDotnetIndexer\Sourcetrail\sourcetraildbPINVOKE.cs" Link="Sourcetrail\sourcetraildbPINVOKE.cs" />
+    <Compile Include="..\SourcetrailDotnetIndexer\Sourcetrail\SymbolKind.cs" Link="Sourcetrail\SymbolKind.cs" />
+    <Compile Include="..\SourcetrailDotnetIndexer\TypeHandler.cs" Link="TypeHandler.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Sourcetrail\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\SourcetrailDotnetIndexer\SourcetrailDB.dll" Link="SourcetrailDB.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

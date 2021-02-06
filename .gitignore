@@ -1,0 +1,6 @@
+/.vs
+/SourcetrailDotnetCoreIndexer/obj
+/SourcetrailDotnetCoreIndexer/bin
+/SourcetrailDotnetIndexer/obj
+/SourcetrailDotnetIndexer/bin
+/SourcetrailDotnetIndexer/*.user

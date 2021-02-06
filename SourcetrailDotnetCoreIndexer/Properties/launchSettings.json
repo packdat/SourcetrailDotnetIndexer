@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SourcetrailDotnetCoreIndexer": {
+      "commandName": "Project",
+      "commandLineArgs": "-i \"C:\\Sourcen\\SourcetrailDotnetIndexer\\SourcetrailDotnetCoreIndexer\\bin\\Debug\\net5.0\\SourcetrailDotnetCoreIndexer.dll\" -f ^System -f ^Microsoft -f ^Coati -o c:\\temp"
+    }
+  }
+}
