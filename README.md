@@ -45,6 +45,9 @@ The following command-line arguments are supported:
   the output filename is always the name of the assembly with the extension `.srctrldb`.\
   note that *SourcetrailDB* automatically creates a file with the `.srctrlprj` extension in the same folder,
   this is the file you load in *Sourcetrail*.
+* -of `output-filename`\
+  full path and filename of the generated database\
+  If both `-o` and `-of` are specified, `-of` takes precedence.
 * -w\
   if specified, waits for the user to press enter before exiting.\
   intended when running from inside VS to keep the console-window open.

@@ -12,6 +12,7 @@ namespace SourcetrailDotnetIndexer
         static string[] assemblySearchPaths;
         static string[] nameFilters;
         static string outputPath;
+        static string outputPathAndFilename;
         static bool waitAtEnd;
 
         static void Usage()
@@ -19,17 +20,20 @@ namespace SourcetrailDotnetIndexer
             var versionInfo = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
             Console.WriteLine("SourcetrailDotnetIndexer v{0}.{1}", versionInfo.FileMajorPart, versionInfo.FileMinorPart);
             Console.WriteLine("Arguments:");
-            Console.WriteLine(" -i InputAssembly");
-            Console.WriteLine("    Specifies the full path of the assembly to index");
-            Console.WriteLine(" -o OutputPath");
-            Console.WriteLine("    Specifies the name of the folder, where the output will be generated");
-            Console.WriteLine("    The output filename is always the input filename with the extension .srctrldb");
-            Console.WriteLine(" -s SearchPath");
-            Console.WriteLine("    Specifies a folder, where additional assemblies are located");
-            Console.WriteLine("    This switch can be used multiple times");
+            Console.WriteLine(" -i  InputAssembly");
+            Console.WriteLine("     Specifies the full path of the assembly to index");
+            Console.WriteLine(" -o  OutputPath");
+            Console.WriteLine("     Specifies the name of the folder, where the output will be generated");
+            Console.WriteLine("     The output filename is always the input filename with the extension .srctrldb");
+            Console.WriteLine(" -of OutputFilename");
+            Console.WriteLine("     Full path and filename of the generated database");
+            Console.WriteLine("     If both -o and -of are specified, -of takes precedence");
+            Console.WriteLine(" -s  SearchPath");
+            Console.WriteLine("     Specifies a folder, where additional assemblies are located");
+            Console.WriteLine("     This switch can be used multiple times");
             Console.WriteLine(" -w");
-            Console.WriteLine("    If specified, waits for the user to press enter before exiting");
-            Console.WriteLine("    Intended when running from inside VS to keep the console-window open");
+            Console.WriteLine("     If specified, waits for the user to press enter before exiting");
+            Console.WriteLine("     Intended when running from inside VS to keep the console-window open");
         }
 
         private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
@@ -98,6 +102,13 @@ namespace SourcetrailDotnetIndexer
                         else
                             return false;
                         break;
+                    case "of":   // output path and filename
+                        i++;
+                        if (i < args.Length)
+                            outputPathAndFilename = args[i];
+                        else
+                            return false;
+                        break;
                     case "w":
                         waitAtEnd = true;
                         break;
@@ -109,7 +120,9 @@ namespace SourcetrailDotnetIndexer
             }
             assemblySearchPaths = searchPaths.ToArray();
             nameFilters = filters.Count > 0 ? filters.ToArray() : null;
-            return !string.IsNullOrWhiteSpace(startAssembly) && !string.IsNullOrWhiteSpace(outputPath);
+
+            return !string.IsNullOrWhiteSpace(startAssembly) 
+                && (!string.IsNullOrWhiteSpace(outputPath) || !string.IsNullOrWhiteSpace(outputPathAndFilename));
         }
     }
 }

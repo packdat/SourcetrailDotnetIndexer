@@ -23,6 +23,10 @@ namespace SourcetrailDotnetIndexer
             }
             try
             {
+                // outputPathAndFilename takes precedence if specified
+                if (!string.IsNullOrWhiteSpace(outputPathAndFilename))
+                    outputPath = Path.GetDirectoryName(outputPathAndFilename);
+
                 if (!Directory.Exists(outputPath))
                     Directory.CreateDirectory(outputPath);
 
@@ -35,7 +39,9 @@ namespace SourcetrailDotnetIndexer
                 var sw = Stopwatch.StartNew();
                 var indexer = new SourcetrailDotnetIndexer(assembly, nameFilter);
 
-                var outFileName = Path.ChangeExtension(Path.GetFileName(startAssembly), ".srctrldb");
+                var outFileName = string.IsNullOrWhiteSpace(outputPathAndFilename)
+                    ? Path.ChangeExtension(Path.GetFileName(startAssembly), ".srctrldb")
+                    : Path.GetFileName(outputPathAndFilename);
                 indexer.Index(Path.Combine(outputPath, outFileName));
                 
                 sw.Stop();

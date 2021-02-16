@@ -23,6 +23,10 @@ namespace SourcetrailDotnetIndexer
             }
             try
             {
+                // outputPathAndFilename takes precedence if specified
+                if (!string.IsNullOrWhiteSpace(outputPathAndFilename))
+                    outputPath = Path.GetDirectoryName(outputPathAndFilename);
+
                 if (!Directory.Exists(outputPath))
                     Directory.CreateDirectory(outputPath);
 
@@ -30,7 +34,9 @@ namespace SourcetrailDotnetIndexer
 
                 AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
 
-                var outFileName = Path.ChangeExtension(Path.GetFileName(startAssembly), ".srctrldb");
+                var outFileName = string.IsNullOrWhiteSpace(outputPathAndFilename)
+                    ? Path.ChangeExtension(Path.GetFileName(startAssembly), ".srctrldb")
+                    : Path.GetFileName(outputPathAndFilename);
 
                 Console.WriteLine("Indexing assembly {0}{1}", startAssembly, Environment.NewLine);
                 var sw = Stopwatch.StartNew();
