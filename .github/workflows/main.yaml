@@ -1,0 +1,44 @@
+name: main
+
+on: 
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs: 
+  build-net:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.2
+
+      - name: Create Build Directory
+        run: mkdir dist-net
+
+      - name: Build .Net Framework version
+        run: | 
+          msbuild.exe SourcetrailDotnetIndexer.sln /t:SourcetrailDotnetIndexer /nologo /p:platform="x64" /p:configuration="Release" /p:OutputPath="..\dist-net"
+      
+  build-netcore:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup .NET Core SDK
+        uses: actions/setup-dotnet@v1.6.0
+        with:
+          dotnet-version: '5.x'
+
+      - name: Create Build Directory
+        run: mkdir dist-netcore
+
+      - name: Build .Net Core version
+        run: dotnet publish SourcetrailDotnetCoreIndexer\SourcetrailDotnetCoreIndexer.csproj -c Release -o "dist-netcore" -r win-x64 --nologo --self-contained false
+      
