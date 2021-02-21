@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SourcetrailDotnetIndexer.PdbSupport;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -7,8 +8,22 @@ namespace SourcetrailDotnetIndexer
 {
     partial class Program
     {
+        private static void TestPdb()
+        {
+            //using (var reader = new PdbReader(@"C:\Sourcen\SourcetrailDotnetIndexer\SourcetrailDotnetIndexer\bin\x64\Debug\SourcetrailDotnetIndexer.exe"))
+            //{
+            //    reader.Open();
+            //}
+            var locator = new PdbLocator();
+            locator.AddAssembly(Assembly.GetExecutingAssembly());
+
+        }
+
         static void Main(string[] args)
         {
+            //TestPdb();
+            //return;
+
             if (!ProcessCommandLine(args))
             {
                 Usage();

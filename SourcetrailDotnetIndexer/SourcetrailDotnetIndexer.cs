@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SourcetrailDotnetIndexer.PdbSupport;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -12,6 +13,7 @@ namespace SourcetrailDotnetIndexer
         private TypeHandler typeHandler;
         private MethodReferenceVisitor referenceVisitor;
         private ILParser ilParser;
+        private PdbLocator pdbLocator;
 
         // list of methods that we have to analyze after collecting all types
         private readonly List<CollectedMethod> collectedMethods = new List<CollectedMethod>();
@@ -27,12 +29,15 @@ namespace SourcetrailDotnetIndexer
             // create the Sourcetrail data collector
             dataCollector = new DataCollector(outputFileName);
 
+            pdbLocator = new PdbLocator();
+            pdbLocator.AddAssembly(assembly);
+
             // set up the type handler
             typeHandler = new TypeHandler(assembly, nameFilter, dataCollector);
             typeHandler.MethodCollected += (sender, args) => collectedMethods.Add(args.CollectedMethod);
 
             // set up the visitor for parsed methods
-            referenceVisitor = new MethodReferenceVisitor(assembly, typeHandler, dataCollector);
+            referenceVisitor = new MethodReferenceVisitor(assembly, typeHandler, dataCollector, pdbLocator);
             referenceVisitor.ParseMethod += (sender, args) => CollectReferencesFromILCode(
                 args.CollectedMethod.Method, args.CollectedMethod.MethodId, args.CollectedMethod.ClassId);
 

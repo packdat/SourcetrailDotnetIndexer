@@ -1,4 +1,5 @@
 ﻿using CoatiSoftware.SourcetrailDB;
+using SourcetrailDotnetIndexer.PdbSupport;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -16,20 +17,29 @@ namespace SourcetrailDotnetIndexer
         private readonly Assembly assembly;
         private readonly TypeHandler typeHandler;
         private readonly DataCollector dataCollector;
+        private readonly PdbLocator pdbLocator;
 
         /// <summary>
         /// Invoked when a method needs to be parsed
         /// </summary>
         public EventHandler<CollectedMethodEventArgs> ParseMethod;
 
-        public MethodReferenceVisitor(Assembly assembly, TypeHandler typeHandler, DataCollector dataCollector)
+        public MethodReferenceVisitor(Assembly assembly,
+                                      TypeHandler typeHandler,
+                                      DataCollector dataCollector,
+                                      PdbLocator pdbLocator)
         {
             this.assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
             this.typeHandler = typeHandler ?? throw new ArgumentNullException(nameof(typeHandler));
             this.dataCollector = dataCollector ?? throw new ArgumentNullException(nameof(dataCollector));
+            this.pdbLocator = pdbLocator ?? throw new ArgumentNullException(nameof(pdbLocator));
         }
 
-        public void VisitMethodCall(MethodBase originatingMethod, MethodBase calledMethod, int referencingMethodId, int referencingClassId)
+        public void VisitMethodCall(MethodBase originatingMethod,
+                                    int ilOffsetOfCall,
+                                    MethodBase calledMethod,
+                                    int referencingMethodId,
+                                    int referencingClassId)
         {
             var targetClassId = 0;
             // do not collect members of foreign assemblies
@@ -54,7 +64,8 @@ namespace SourcetrailDotnetIndexer
                 if (paramTypeId > 0 && paramTypeId != referencingClassId)  // ignore self-references (e.g. when passing "this" as a parameter)
                 {
                     dataCollector.CollectReference(referencingClassId, paramTypeId, ReferenceKind.REFERENCE_TYPE_USAGE);
-                    dataCollector.CollectReference(referencingMethodId, paramTypeId, ReferenceKind.REFERENCE_TYPE_USAGE);
+                    var refId = dataCollector.CollectReference(referencingMethodId, paramTypeId, ReferenceKind.REFERENCE_TYPE_USAGE);
+                    CollectReferenceLocation(originatingMethod, refId, ilOffsetOfCall);
                 }
             }
             if (targetClassId > 0)
@@ -62,12 +73,16 @@ namespace SourcetrailDotnetIndexer
                 if (referencingClassId != targetClassId)   // ignore self-references
                 {
                     dataCollector.CollectReference(referencingClassId, targetClassId, ReferenceKind.REFERENCE_TYPE_USAGE);
-                    dataCollector.CollectReference(referencingMethodId, targetClassId, ReferenceKind.REFERENCE_TYPE_USAGE);
+                    var refId = dataCollector.CollectReference(referencingMethodId, targetClassId, ReferenceKind.REFERENCE_TYPE_USAGE);
+                    CollectReferenceLocation(originatingMethod, refId, ilOffsetOfCall);
                 }
                 var targetMethodId = typeHandler.CollectMember(calledMethod, out var targetKind);
                 if (targetMethodId > 0)
-                    dataCollector.CollectReference(referencingMethodId, targetMethodId,
+                {
+                    var refId = dataCollector.CollectReference(referencingMethodId, targetMethodId,
                         targetKind == SymbolKind.SYMBOL_METHOD ? ReferenceKind.REFERENCE_CALL : ReferenceKind.REFERENCE_USAGE);
+                    CollectReferenceLocation(originatingMethod, refId, ilOffsetOfCall);
+                }
                 // if target is an interface, link to implementors as well
                 // (seems to be consistent with behavior of VS 2019 when looking at references)
                 List<Type> implementors = new List<Type>();
@@ -79,7 +94,8 @@ namespace SourcetrailDotnetIndexer
                     if (implTypeId > 0)
                     {
                         dataCollector.CollectReference(referencingClassId, implTypeId, ReferenceKind.REFERENCE_TYPE_USAGE);
-                        dataCollector.CollectReference(referencingMethodId, implTypeId, ReferenceKind.REFERENCE_TYPE_USAGE);
+                        var refId = dataCollector.CollectReference(referencingMethodId, implTypeId, ReferenceKind.REFERENCE_TYPE_USAGE);
+                        CollectReferenceLocation(originatingMethod, refId, ilOffsetOfCall);
                     }
                     foreach (var implMethod in implementor.GetMethods(flags))
                     {
@@ -87,16 +103,21 @@ namespace SourcetrailDotnetIndexer
                         if (implMethod.Name == calledMethod.Name && implMethod.HasSameParameters(calledMethod))
                         {
                             var implMethodId = typeHandler.CollectMember(implMethod, out var targetImplKind);
-                            dataCollector.CollectReference(referencingMethodId, implMethodId,
+                            var refId = dataCollector.CollectReference(referencingMethodId, implMethodId,
                                 targetImplKind == SymbolKind.SYMBOL_METHOD ? ReferenceKind.REFERENCE_CALL : ReferenceKind.REFERENCE_USAGE);
+                            CollectReferenceLocation(originatingMethod, refId, ilOffsetOfCall);
                             break;
                         }
                     }
                 }
-            }
+            }            
         }
 
-        public void VisitFieldReference(FieldInfo referencedField, int referencingMethodId, int referencingClassId)
+        public void VisitFieldReference(MethodBase originatingMethod,
+                                        int ilOffsetOfReference,
+                                        FieldInfo referencedField,
+                                        int referencingMethodId,
+                                        int referencingClassId)
         {
             var targetClassId = typeHandler.AddToDbIfValid(referencedField.DeclaringType);
             if (targetClassId > 0)
@@ -104,13 +125,15 @@ namespace SourcetrailDotnetIndexer
                 if (referencingClassId != targetClassId)   // ignore self-references
                 {
                     dataCollector.CollectReference(referencingClassId, targetClassId, ReferenceKind.REFERENCE_TYPE_USAGE);
-                    dataCollector.CollectReference(referencingMethodId, targetClassId, ReferenceKind.REFERENCE_TYPE_USAGE);
+                    var refId = dataCollector.CollectReference(referencingMethodId, targetClassId, ReferenceKind.REFERENCE_TYPE_USAGE);
+                    CollectReferenceLocation(originatingMethod, refId, ilOffsetOfReference);
                 }
                 var fieldId = typeHandler.CollectMember(referencedField, out _);
                 if (fieldId > 0)
                 {
                     //dataCollector.CollectReference(classId, fieldId, ReferenceKind.REFERENCE_USAGE);
-                    dataCollector.CollectReference(referencingMethodId, fieldId, ReferenceKind.REFERENCE_USAGE);
+                    var refId = dataCollector.CollectReference(referencingMethodId, fieldId, ReferenceKind.REFERENCE_USAGE);
+                    CollectReferenceLocation(originatingMethod, refId, ilOffsetOfReference);
                 }
                 var fieldTypeId = typeHandler.AddToDbIfValid(referencedField.FieldType);
                 if (fieldTypeId > 0)
@@ -118,13 +141,18 @@ namespace SourcetrailDotnetIndexer
                     if (referencingClassId != fieldTypeId)
                     {
                         dataCollector.CollectReference(referencingClassId, fieldTypeId, ReferenceKind.REFERENCE_TYPE_USAGE);
-                        dataCollector.CollectReference(referencingMethodId, fieldTypeId, ReferenceKind.REFERENCE_TYPE_USAGE);
+                        var refId = dataCollector.CollectReference(referencingMethodId, fieldTypeId, ReferenceKind.REFERENCE_TYPE_USAGE);
+                        CollectReferenceLocation(originatingMethod, refId, ilOffsetOfReference);
                     }
                 }
             }
         }
 
-        public void VisitTypeReference(Type type, int referencingMethodId, int referencingClassId)
+        public void VisitTypeReference(MethodBase originatingMethod,
+                                       int ilOffsetOfReference,
+                                       Type type,
+                                       int referencingMethodId,
+                                       int referencingClassId)
         {
             var targetClassId = typeHandler.AddToDbIfValid(type);
             if (targetClassId > 0)
@@ -132,12 +160,17 @@ namespace SourcetrailDotnetIndexer
                 if (referencingClassId != targetClassId)       // ignore self-references
                 {
                     dataCollector.CollectReference(referencingClassId, targetClassId, ReferenceKind.REFERENCE_TYPE_USAGE);
-                    dataCollector.CollectReference(referencingMethodId, targetClassId, ReferenceKind.REFERENCE_TYPE_USAGE);
+                    var refId = dataCollector.CollectReference(referencingMethodId, targetClassId, ReferenceKind.REFERENCE_TYPE_USAGE);
+                    CollectReferenceLocation(originatingMethod, refId, ilOffsetOfReference);
                 }
             }
         }
 
-        public void VisitMethodReference(MethodBase referencedMethod, int referencingMethodId, int referencingClassId)
+        public void VisitMethodReference(MethodBase originatingMethod,
+                                         int ilOffsetOfReference,
+                                         MethodBase referencedMethod,
+                                         int referencingMethodId,
+                                         int referencingClassId)
         {
             var targetClassId = 0;
             // do not collect members of foreign assemblies
@@ -148,11 +181,15 @@ namespace SourcetrailDotnetIndexer
                 if (referencingClassId != targetClassId)       // ignore self-references
                 {
                     dataCollector.CollectReference(referencingClassId, targetClassId, ReferenceKind.REFERENCE_TYPE_USAGE);
-                    dataCollector.CollectReference(referencingMethodId, targetClassId, ReferenceKind.REFERENCE_TYPE_USAGE);
+                    var refId = dataCollector.CollectReference(referencingMethodId, targetClassId, ReferenceKind.REFERENCE_TYPE_USAGE);
+                    CollectReferenceLocation(originatingMethod, refId, ilOffsetOfReference);
                 }
                 var targetMethodId = typeHandler.CollectMember(referencedMethod, out _);
                 if (targetMethodId > 0)
-                    dataCollector.CollectReference(referencingMethodId, targetMethodId, ReferenceKind.REFERENCE_USAGE);
+                {
+                    var refId = dataCollector.CollectReference(referencingMethodId, targetMethodId, ReferenceKind.REFERENCE_USAGE);
+                    CollectReferenceLocation(originatingMethod, refId, ilOffsetOfReference);
+                }
             }
             // attempt to detect inline lambdas (e.g. foo.Select(item => bar(item))
             // or lambda methods in a compiler-generated class
@@ -162,6 +199,26 @@ namespace SourcetrailDotnetIndexer
             //{
             //    ParseMethod?.Invoke(this, new CollectedMethodEventArgs(new CollectedMethod(referencedMethod, methodId, classId)));
             //}
+        }
+
+        private void CollectReferenceLocation(MethodBase referencingMethod, int referenceId, int ilOffsetOfReference)
+        {
+            var pdbReader = pdbLocator.GetPdbReaderForAssembly(referencingMethod.DeclaringType.Assembly);
+            if (pdbReader != null)
+            {
+                var pdbMethod = pdbReader.GetMethod(referencingMethod.MetadataToken);
+                if (pdbMethod != null)
+                {
+                    var seq = pdbMethod.GetSequenceForILOffset(ilOffsetOfReference);
+                    if (seq != null)
+                    {
+                        var fileId = dataCollector.CollectFile(pdbMethod.DocumentName, pdbMethod.LanguageName);
+                        // had to subtract 1 from EndColumn, otherwise text disappears in Sourcetrail
+                        DataCollector.CollectReferenceLocation(referenceId, fileId,
+                            seq.StartLine, seq.StartColumn, seq.EndLine, seq.EndColumn - 1);
+                    }
+                }
+            }
         }
     }
 }

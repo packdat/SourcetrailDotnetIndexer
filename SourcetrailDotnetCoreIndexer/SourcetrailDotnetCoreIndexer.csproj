@@ -3,6 +3,13 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
+    <AssemblyVersion>0.2.0.0</AssemblyVersion>
+    <FileVersion>0.2.0.0</FileVersion>
+    <Version>0.2.0</Version>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;NETCORE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,6 +20,10 @@
     <Compile Include="..\SourcetrailDotnetIndexer\MethodReferenceVisitor.cs" Link="MethodReferenceVisitor.cs" />
     <Compile Include="..\SourcetrailDotnetIndexer\NameHelper.cs" Link="NameHelper.cs" />
     <Compile Include="..\SourcetrailDotnetIndexer\NamespaceFilter.cs" Link="NamespaceFilter.cs" />
+    <Compile Include="..\SourcetrailDotnetIndexer\PdbSupport\CodeSequence.cs" Link="PdbSupport\CodeSequence.cs" />
+    <Compile Include="..\SourcetrailDotnetIndexer\PdbSupport\IPdbReader.cs" Link="PdbSupport\IPdbReader.cs" />
+    <Compile Include="..\SourcetrailDotnetIndexer\PdbSupport\PdbLocator.cs" Link="PdbSupport\PdbLocator.cs" />
+    <Compile Include="..\SourcetrailDotnetIndexer\PdbSupport\PdbMethod.cs" Link="PdbSupport\PdbMethod.cs" />
     <Compile Include="..\SourcetrailDotnetIndexer\Program.Shared.cs" Link="Program.Shared.cs" />
     <Compile Include="..\SourcetrailDotnetIndexer\ReflectionExtensions.cs" Link="ReflectionExtensions.cs" />
     <Compile Include="..\SourcetrailDotnetIndexer\SourcetrailDotnetIndexer.cs" Link="SourcetrailDotnetIndexer.cs" />
@@ -32,6 +43,10 @@
     <None Include="..\SourcetrailDotnetIndexer\SourcetrailDB.dll" Link="SourcetrailDB.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Reflection.Metadata" Version="5.0.0" />
   </ItemGroup>
 
 </Project>

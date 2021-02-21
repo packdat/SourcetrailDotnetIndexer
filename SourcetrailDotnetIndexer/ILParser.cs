@@ -292,7 +292,7 @@ namespace SourcetrailDotnetIndexer
                                 BitConverter.ToInt32(il, i + opcode.Size),
                                 t.IsGenericType || t.IsGenericTypeDefinition ? method.DeclaringType.GetGenericArguments() : null,
                                 method.IsGenericMethod || method.IsGenericMethodDefinition ? method.GetGenericArguments() : null);
-                            referenceVisitor.VisitMethodCall(method, mb, methodId, classId);
+                            referenceVisitor.VisitMethodCall(method, i, mb, methodId, classId);
                         }
                         catch (Exception ex)
                         {
@@ -308,7 +308,7 @@ namespace SourcetrailDotnetIndexer
                                 BitConverter.ToInt32(il, i + opcode.Size),
                                 t.IsGenericType || t.IsGenericTypeDefinition ? method.DeclaringType.GetGenericArguments() : null,
                                 method.IsGenericMethod || method.IsGenericMethodDefinition ? method.GetGenericArguments() : null);
-                            referenceVisitor.VisitFieldReference(fi, methodId, classId);
+                            referenceVisitor.VisitFieldReference(method, i, fi, methodId, classId);
                         }
                         catch (Exception ex)
                         {
@@ -324,7 +324,7 @@ namespace SourcetrailDotnetIndexer
                                 BitConverter.ToInt32(il, i + opcode.Size),
                                 t.IsGenericType || t.IsGenericTypeDefinition ? method.DeclaringType.GetGenericArguments() : null,
                                 method.IsGenericMethod || method.IsGenericMethodDefinition ? method.GetGenericArguments() : null);
-                            referenceVisitor.VisitTypeReference(referencedType, methodId, classId);
+                            referenceVisitor.VisitTypeReference(method, i, referencedType, methodId, classId);
                         }
                         catch (Exception ex)
                         {
@@ -340,7 +340,7 @@ namespace SourcetrailDotnetIndexer
                                     BitConverter.ToInt32(il, i + opcode.Size),
                                     t.IsGenericType || t.IsGenericTypeDefinition ? method.DeclaringType.GetGenericArguments() : null,
                                     method.IsGenericMethod || method.IsGenericMethodDefinition ? method.GetGenericArguments() : null);
-                            referenceVisitor.VisitMethodReference(mb, methodId, classId);
+                            referenceVisitor.VisitMethodReference(method, i, mb, methodId, classId);
                         }
                         catch (Exception ex)
                         {

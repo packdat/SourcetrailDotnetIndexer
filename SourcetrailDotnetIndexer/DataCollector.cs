@@ -12,6 +12,8 @@ namespace SourcetrailDotnetIndexer
         // names of symbols (types, methods, etc.) with their symbolId
         private readonly Dictionary<string, int> collectedSymbols = new Dictionary<string, int>();
 
+        private readonly Dictionary<string, int> collectedFiles = new Dictionary<string, int>();
+
         public DataCollector(string outputFileName)
         {
             if (string.IsNullOrWhiteSpace(outputFileName))
@@ -59,6 +61,29 @@ namespace SourcetrailDotnetIndexer
                 throw new ArgumentException("A symbol-id must be greater than zero");
 
             return sourcetraildb.recordReference(sourceSymbolId, referenceSymbolId, referenceKind);
+        }
+
+        public int CollectFile(string filename, string language)
+        {
+            if (string.IsNullOrWhiteSpace(filename))
+                throw new ArgumentNullException(nameof(filename));
+
+            if (collectedFiles.TryGetValue(filename, out int fileId))
+                return fileId;
+            fileId = sourcetraildb.recordFile(filename);
+            sourcetraildb.recordFileLanguage(fileId, language);
+            collectedFiles[filename] = fileId;
+            return fileId;
+        }
+
+        public static void CollectReferenceLocation(int referenceId, int fileId, int startLine, int startColumn, int endLine, int endColumn)
+        {
+            if (referenceId <= 0)
+                throw new ArgumentException("Reference id must be greater than zero", nameof(referenceId));
+            if (fileId <= 0)
+                throw new ArgumentException("File id must be greater than zero", nameof(fileId));
+
+            sourcetraildb.recordReferenceLocation(referenceId, fileId, startLine, startColumn, endLine, endColumn);
         }
     }
 }

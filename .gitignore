@@ -4,3 +4,4 @@
 /SourcetrailDotnetIndexer/obj
 /SourcetrailDotnetIndexer/bin
 /SourcetrailDotnetIndexer/*.user
+/packages
