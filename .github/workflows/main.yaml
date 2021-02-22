@@ -69,11 +69,12 @@ jobs:
           path: ./BUILD
 
       - name: 'Echo download path'
+        if: env.ACTIONS_STEP_DEBUG 
         run: echo ${{steps.download.outputs.download-path}}
 
       - name: Uploading artifacts to release
-        uses: alexellis/upload-assets@0.2.2
+        uses: xresloader/upload-to-github-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          asset_paths: '["./BUILD/*"]'
+          file: ${{ steps.download.outputs.download-path }}
