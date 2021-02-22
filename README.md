@@ -22,6 +22,14 @@ regardless of the language they are created from (e.g. C#, VB.NET, ...)
 but i tested in only with a handful of assemblies generated from C#.\
 Feel free to open a pull-request if you encounter any flaws.
 
+**Update 22.02.2021**\
+Support for reading *some* source-code information has been added.\
+*SourcetrailDotnetIndexer* now attempts to read information from PDB-files if they were found next to the assembly.
+(e.g. if the path to your assembly is `c:\temp\myApp.exe` *SourcetrailDotnetIndexer* attempts to load the PDB `c:\temp\myApp.pdb`)\
+This enables the tool to read the source-formation about where a type or a method is referenced in a method.\
+(See the second screenshot below)\
+If you need more control over where to locate the PDB-files, please open an issue (or better yet: open a pull-request ! :) and describe your scenario.
+
 Building
 --------
 Open the `.sln` in VisualStudio and build.
@@ -56,3 +64,6 @@ Results
 -------
 This is an image taken from sourcetrail after creating the database for **SourcetrailDotnetIndexer** itself.
 ![Screenshot](./Indexer-Classes.png)
+
+This is a screenshot with source-information read from a PDB.
+![PdbSupport](./PdbSupport.png)

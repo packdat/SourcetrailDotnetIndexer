@@ -10,6 +10,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9E2D31DF-633C-41FD-9CE2-FC82500B0A93}"
 	ProjectSection(SolutionItems) = preProject
 		Indexer-Classes.png = Indexer-Classes.png
+		PdbSupport.png = PdbSupport.png
 		README.md = README.md
 	EndProjectSection
 EndProject
