@@ -63,9 +63,13 @@ jobs:
           prerelease: false
 
       - uses: actions/download-artifact@v2
+        id: download
         with:
           name: BUILD
-          path: BUILD
+          path: ./BUILD
+
+      - name: 'Echo download path'
+        run: echo ${{steps.download.outputs.download-path}}
 
       - name: Uploading artifacts to release
         uses: alexellis/upload-assets@0.2.2
