@@ -82,4 +82,4 @@ jobs:
           file: ${{ steps.download.outputs.download-path }}
           release_id: ${{ steps.create_release.outputs.id }}
           overwrite: true
-          verbose: env.ACTIONS_STEP_DEBUG 
+          verbose: env.ACTIONS_STEP_DEBUG
