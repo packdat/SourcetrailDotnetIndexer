@@ -55,6 +55,7 @@ jobs:
     if: ${{ github.event_name != 'pull_request' }}
     steps:
       - name: Create github release 
+        id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -79,3 +80,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           file: ${{ steps.download.outputs.download-path }}
+          release_id: ${{ steps.create_release.outputs.id }}
+          overwrite: true
+          verbose: env.ACTIONS_STEP_DEBUG 
