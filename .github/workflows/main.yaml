@@ -28,6 +28,10 @@ jobs:
       - name: Create Build Directory
         run: mkdir dist-net,dist-netcore
 
+      - name: Restore packages
+        run: | 
+          msbuild.exe -t:restore -p:RestorePackagesConfig=true
+
       - name: Build .Net version
         run: | 
           msbuild.exe SourcetrailDotnetIndexer.sln /t:SourcetrailDotnetIndexer /nologo /p:platform="x64" /p:configuration="Release" /p:OutputPath="..\dist-net"
