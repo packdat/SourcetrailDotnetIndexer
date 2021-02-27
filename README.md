@@ -22,9 +22,8 @@ regardless of the language they are created from (e.g. C#, VB.NET, ...)
 but i tested in only with a handful of assemblies generated from C#.\
 Feel free to open a pull-request if you encounter any flaws.
 
-**Update 22.02.2021**\
-Support for reading *some* source-code information has been added.\
-*SourcetrailDotnetIndexer* now attempts to read information from PDB-files if they were found next to the assembly.
+In version 0.2.0, support for reading *some* source-code information has been added.\
+*SourcetrailDotnetIndexer* attempts to read information from PDB-files if they were found next to the assembly.
 (e.g. if the path to your assembly is `c:\temp\myApp.exe` *SourcetrailDotnetIndexer* attempts to load the PDB `c:\temp\myApp.pdb`)\
 This enables the tool to read the source-formation about where a type or a method is referenced in a method.\
 (See the second screenshot below)\
@@ -59,6 +58,12 @@ The following command-line arguments are supported:
 * -w\
   if specified, waits for the user to press enter before exiting.\
   intended when running from inside VS to keep the console-window open.
+
+**Note**\
+If you encounter exceptions when running the tool stating `Unable to load DLL 'SourcetrailDB'`,
+your system may be missing the Visual C++ Runtime required by the native *SourcetrailDB* dll.\
+In that case, install the runtime for Visual Studio 2019 from [this link](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads).\
+(make sure to install the x64 version)
 
 Results
 -------
