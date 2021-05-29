@@ -6,6 +6,8 @@ using System.Reflection;
 
 namespace SourcetrailDotnetIndexer
 {
+    delegate Assembly AssemblyLoadDelegate(string path);
+
     partial class Program
     {
         static string startAssembly;
@@ -14,6 +16,9 @@ namespace SourcetrailDotnetIndexer
         static string outputPath;
         static string outputPathAndFilename;
         static bool waitAtEnd;
+        // we use Assembly.ReflectionOnlyLoadFrom for the DotnetIndexer
+        // and Assembly.LoadFrom for the DotnetcoreIndexer
+        static AssemblyLoadDelegate assemblyLoader;
 
         static void Usage()
         {
@@ -44,7 +49,7 @@ namespace SourcetrailDotnetIndexer
             if (File.Exists(asmPath))
             {
                 Console.WriteLine("Load: {0}", asmPath);
-                var asm = Assembly.ReflectionOnlyLoadFrom(asmPath);
+                var asm = assemblyLoader(asmPath);
                 return asm;
             }
             foreach (var basePath in assemblySearchPaths)
@@ -53,7 +58,7 @@ namespace SourcetrailDotnetIndexer
                 if (File.Exists(asmPath))
                 {
                     Console.WriteLine("Load: {0}", asmPath);
-                    var asm = Assembly.ReflectionOnlyLoadFrom(asmPath);
+                    var asm = assemblyLoader(asmPath);
                     return asm;
                 }
             }

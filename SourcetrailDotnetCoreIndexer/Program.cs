@@ -33,6 +33,7 @@ namespace SourcetrailDotnetIndexer
                 var nameFilter = new NamespaceFilter(nameFilters);
 
                 AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
+                assemblyLoader = Assembly.LoadFrom;
 
                 var outFileName = string.IsNullOrWhiteSpace(outputPathAndFilename)
                     ? Path.ChangeExtension(Path.GetFileName(startAssembly), ".srctrldb")
