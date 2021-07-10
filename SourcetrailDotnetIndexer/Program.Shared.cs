@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Text;
 
 namespace SourcetrailDotnetIndexer
 {
@@ -13,6 +15,7 @@ namespace SourcetrailDotnetIndexer
         static string startAssembly;
         static string[] assemblySearchPaths;
         static string[] nameFilters;
+        static string[] namespacesToFollow;
         static string outputPath;
         static string outputPathAndFilename;
         static bool waitAtEnd;
@@ -36,6 +39,18 @@ namespace SourcetrailDotnetIndexer
             Console.WriteLine(" -s  SearchPath");
             Console.WriteLine("     Specifies a folder, where additional assemblies are located");
             Console.WriteLine("     This switch can be used multiple times");
+            Console.WriteLine(" -f  Namespace Filter");
+            Console.WriteLine("     Specifies a regex that is used to exclude types from matching namespaces");
+            Console.WriteLine("     This switch can be used multiple times");
+            Console.WriteLine(" -fn Namespace Filter");
+            Console.WriteLine("     Specifies a regex that specifies namespaces that are allowed to be followed");
+            Console.WriteLine("     (by default, only types from the InputAssembly are collected");
+            Console.WriteLine("     This is basically the opposite of -f");
+            Console.WriteLine("     This switch can be used multiple times");
+            Console.WriteLine(" -ff File Path");
+            Console.WriteLine("     Specifies the path to a text-file with namespaces that are allowed to be followed");
+            Console.WriteLine("     This may be more convenient than specifying multiple namespaces with the -fn switch");
+            Console.WriteLine("     Every line in the specified file contains a regex matching one or more namespaces");
             Console.WriteLine(" -w");
             Console.WriteLine("     If specified, waits for the user to press enter before exiting");
             Console.WriteLine("     Intended when running from inside VS to keep the console-window open");
@@ -71,6 +86,7 @@ namespace SourcetrailDotnetIndexer
         {
             var searchPaths = new List<string>();
             var filters = new List<string>();
+            var followFilters = new List<string>();
             var i = 0;
             while (i < args.Length)
             {
@@ -100,6 +116,27 @@ namespace SourcetrailDotnetIndexer
                         else
                             return false;
                         break;
+                    case "fn":   // namespaces to follow
+                        i++;
+                        if (i < args.Length)
+                            followFilters.Add(args[i]);
+                        else
+                            return false;
+                        break;
+                    case "ff":   // path to a file with namespaces to follow
+                        i++;
+                        if (i < args.Length)
+                        {
+                            if (!File.Exists(args[i]))
+                            {
+                                Console.WriteLine("The file '{0}' does not exist", args[i]);
+                                return false;
+                            }
+                            followFilters.AddRange(ReadTextFile(args[i]));
+                        }
+                        else
+                            return false;
+                        break;
                     case "o":   // output path
                         i++;
                         if (i < args.Length)
@@ -125,9 +162,17 @@ namespace SourcetrailDotnetIndexer
             }
             assemblySearchPaths = searchPaths.ToArray();
             nameFilters = filters.Count > 0 ? filters.ToArray() : null;
+            namespacesToFollow = followFilters.Count > 0 ? followFilters.ToArray() : null;
 
             return !string.IsNullOrWhiteSpace(startAssembly) 
                 && (!string.IsNullOrWhiteSpace(outputPath) || !string.IsNullOrWhiteSpace(outputPathAndFilename));
+        }
+
+        protected static IEnumerable<string> ReadTextFile(string filePath)
+        {
+            var encoding = new UTF8Encoding(false, true);
+            return File.ReadAllLines(filePath, encoding)
+                .Where(l => !string.IsNullOrWhiteSpace(l) && !l.StartsWith("#"));
         }
     }
 }

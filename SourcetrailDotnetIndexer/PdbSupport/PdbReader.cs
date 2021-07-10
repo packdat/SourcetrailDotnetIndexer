@@ -43,8 +43,8 @@ namespace SourcetrailDotnetIndexer.PdbSupport
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("An exception occurred reading the debug-information from {0}\r\n{1}",
-                        filename, ex);
+                    Console.WriteLine("An exception occurred reading the debug-information from {0}\r\n{1} -> {2}",
+                        filename, ex.GetType().Name, ex.Message);
                 }
             }
         }

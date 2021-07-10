@@ -263,7 +263,6 @@ namespace SourcetrailDotnetIndexer
             if (body == null)
                 return;
             var t = method.DeclaringType;
-            var opList = new List<OpCode>();    // just for debugging purposes, can be removed
             var il = body.GetILAsByteArray();
             var i = 0;
             while (i < il.Length)
@@ -283,7 +282,6 @@ namespace SourcetrailDotnetIndexer
                             Console.WriteLine("Unrecognized opcode: 0x{0:x} in {1}.{2}(...)", opval, t.FullName, method.Name);
                         }
                     }
-                    opList.Add(opcode);
                     if (opcode.FlowControl == FlowControl.Call)
                     {
                         try

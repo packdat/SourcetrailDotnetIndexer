@@ -9,6 +9,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SourcetrailDotnetCoreIndexe
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9E2D31DF-633C-41FD-9CE2-FC82500B0A93}"
 	ProjectSection(SolutionItems) = preProject
+		Demo-st-01.png = Demo-st-01.png
+		Demo-st-02.png = Demo-st-02.png
+		Demo-st-03.png = Demo-st-03.png
+		DemoSolution.png = DemoSolution.png
 		Indexer-Classes.png = Indexer-Classes.png
 		PdbSupport.png = PdbSupport.png
 		README.md = README.md

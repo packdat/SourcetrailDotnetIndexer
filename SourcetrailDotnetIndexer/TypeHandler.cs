@@ -1,4 +1,5 @@
 ﻿using CoatiSoftware.SourcetrailDB;
+using SourcetrailDotnetIndexer.PdbSupport;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -15,7 +16,9 @@ namespace SourcetrailDotnetIndexer
 
         private readonly Assembly assembly;
         private readonly NamespaceFilter nameFilter;
+        private readonly NamespaceFilter namespaceFollowFilter;
         private readonly DataCollector dataCollector;
+        private readonly PdbLocator pdbLocator;
 
         // the collected namespaces
         private readonly Dictionary<string, int> namespaces = new Dictionary<string, int>();
@@ -24,6 +27,8 @@ namespace SourcetrailDotnetIndexer
         private readonly Dictionary<Type, List<Type>> interfaceImplementations = new Dictionary<Type, List<Type>>();
         // the types that are already collected with their symbolId
         private readonly Dictionary<Type, int> collectedTypes = new Dictionary<Type, int>();
+        // the assemblies that we have followed
+        private readonly Dictionary<Assembly, int> collectedAssemblies = new Dictionary<Assembly, int>();
 
         /// <summary>
         /// Gets the number of found types
@@ -37,11 +42,17 @@ namespace SourcetrailDotnetIndexer
 
         public TypeHandler(Assembly assembly,
                            NamespaceFilter nameFilter,
-                           DataCollector dataCollector)
+                           NamespaceFilter namespaceFollowFilter,
+                           DataCollector dataCollector,
+                           PdbLocator pdbLocator)
         {
             this.assembly = assembly;
             this.nameFilter = nameFilter;
+            this.namespaceFollowFilter = namespaceFollowFilter;
             this.dataCollector = dataCollector;
+            this.pdbLocator = pdbLocator;
+
+            collectedAssemblies.Add(assembly, 1);
         }
 
         public Type[] GetInterfaceImplementors(Type interfaceType)
@@ -109,18 +120,33 @@ namespace SourcetrailDotnetIndexer
                         dataCollector.CollectReference(classId, baseTypeId, ReferenceKind.REFERENCE_TEMPLATE_SPECIALIZATION);
                 }
 
-                // do not collect members for types from foreign assemblies
-                if (type.Assembly == assembly)
+                // do not collect members for types from foreign assemblies unless they match the specified filter
+                if (ShouldCollectType(type))
                     CollectTypeMembers(type, classId);
             }
             return classId;
         }
+
+        public bool ShouldCollectType(Type type)
+        {
+            return type != null
+                && nameFilter.IsValid(type.Namespace)
+                && (type.Assembly == assembly || namespaceFollowFilter.Matches(type.Namespace));
+        }
+
 
         private void CollectTypeMembers(Type type, int typeSymbolId)
         {
             // skip, if already collected
             if (collectedTypes.ContainsKey(type))
                 return;
+
+            if (!collectedAssemblies.ContainsKey(type.Assembly))
+            {
+                Console.WriteLine("Following {0}", type.Assembly.Location);
+                collectedAssemblies.Add(type.Assembly, 1);
+                pdbLocator.AddAssembly(type.Assembly);
+            }
 
             collectedTypes[type] = typeSymbolId;
 

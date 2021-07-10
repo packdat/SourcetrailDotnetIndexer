@@ -9,6 +9,7 @@ namespace SourcetrailDotnetIndexer
     {
         private readonly Assembly assembly;
         private readonly NamespaceFilter nameFilter;
+        private readonly NamespaceFilter namespaceFollowFilter;
         private DataCollector dataCollector;
         private TypeHandler typeHandler;
         private MethodReferenceVisitor referenceVisitor;
@@ -18,10 +19,11 @@ namespace SourcetrailDotnetIndexer
         // list of methods that we have to analyze after collecting all types
         private readonly List<CollectedMethod> collectedMethods = new List<CollectedMethod>();
 
-        public SourcetrailDotnetIndexer(Assembly assembly, NamespaceFilter nameFilter)
+        public SourcetrailDotnetIndexer(Assembly assembly, NamespaceFilter nameFilter, NamespaceFilter namespaceFollowFilter)
         {
             this.assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
             this.nameFilter = nameFilter ?? throw new ArgumentNullException(nameof(nameFilter));
+            this.namespaceFollowFilter = namespaceFollowFilter ?? throw new ArgumentNullException(nameof(namespaceFollowFilter));
         }
 
         public void Index(string outputFileName)
@@ -33,11 +35,11 @@ namespace SourcetrailDotnetIndexer
             pdbLocator.AddAssembly(assembly);
 
             // set up the type handler
-            typeHandler = new TypeHandler(assembly, nameFilter, dataCollector);
+            typeHandler = new TypeHandler(assembly, nameFilter, namespaceFollowFilter, dataCollector, pdbLocator);
             typeHandler.MethodCollected += (sender, args) => collectedMethods.Add(args.CollectedMethod);
 
             // set up the visitor for parsed methods
-            referenceVisitor = new MethodReferenceVisitor(assembly, typeHandler, dataCollector, pdbLocator);
+            referenceVisitor = new MethodReferenceVisitor(typeHandler, dataCollector, pdbLocator);
             referenceVisitor.ParseMethod += (sender, args) => CollectReferencesFromILCode(
                 args.CollectedMethod.Method, args.CollectedMethod.MethodId, args.CollectedMethod.ClassId);
 

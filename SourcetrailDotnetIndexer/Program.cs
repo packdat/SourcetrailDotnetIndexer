@@ -31,6 +31,7 @@ namespace SourcetrailDotnetIndexer
                     Directory.CreateDirectory(outputPath);
 
                 var nameFilter = new NamespaceFilter(nameFilters);
+                var followFilter = new NamespaceFilter(namespacesToFollow);
 
                 AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += CurrentDomain_AssemblyResolve;
                 assemblyLoader = Assembly.ReflectionOnlyLoadFrom;
@@ -38,7 +39,7 @@ namespace SourcetrailDotnetIndexer
                 Console.WriteLine("Indexing assembly {0}{1}", startAssembly, Environment.NewLine);
 
                 var sw = Stopwatch.StartNew();
-                var indexer = new SourcetrailDotnetIndexer(assembly, nameFilter);
+                var indexer = new SourcetrailDotnetIndexer(assembly, nameFilter, followFilter);
 
                 var outFileName = string.IsNullOrWhiteSpace(outputPathAndFilename)
                     ? Path.ChangeExtension(Path.GetFileName(startAssembly), ".srctrldb")

@@ -31,6 +31,7 @@ namespace SourcetrailDotnetIndexer
                     Directory.CreateDirectory(outputPath);
 
                 var nameFilter = new NamespaceFilter(nameFilters);
+                var followFilter = new NamespaceFilter(namespacesToFollow);
 
                 AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
                 assemblyLoader = Assembly.LoadFrom;
@@ -46,7 +47,7 @@ namespace SourcetrailDotnetIndexer
                 // and we also can't use ReflectionOnlyLoadFrom, as that is not supported in .net core and .net 5+
                 var assembly = Assembly.LoadFrom(startAssembly);
 
-                var indexer = new SourcetrailDotnetIndexer(assembly, nameFilter);
+                var indexer = new SourcetrailDotnetIndexer(assembly, nameFilter, followFilter);
 
                 indexer.Index(Path.Combine(outputPath, outFileName));
 

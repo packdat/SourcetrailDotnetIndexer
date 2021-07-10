@@ -29,10 +29,21 @@ namespace SourcetrailDotnetIndexer
         {
             foreach (var pattern in filterPatterns)
             {
-                if (Regex.IsMatch(name, pattern))
+                if (Regex.IsMatch(name, pattern, RegexOptions.IgnoreCase))
                     return false;
             }
             return true;
+        }
+
+        /// <summary>
+        /// Determines whether the specified name matches any of the regex-patterns defined for this instance<br/>
+        /// This is the opposite of <see cref="IsValid(string)"/>
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns>false, if none of the patterns matches <b><paramref name="name"/></b> otherwise true</returns>
+        public bool Matches(string name)
+        {
+            return !IsValid(name);
         }
     }
 }

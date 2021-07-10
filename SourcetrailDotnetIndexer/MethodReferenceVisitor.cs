@@ -14,7 +14,6 @@ namespace SourcetrailDotnetIndexer
         private readonly BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic |
                             BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
 
-        private readonly Assembly assembly;
         private readonly TypeHandler typeHandler;
         private readonly DataCollector dataCollector;
         private readonly PdbLocator pdbLocator;
@@ -24,12 +23,10 @@ namespace SourcetrailDotnetIndexer
         /// </summary>
         public EventHandler<CollectedMethodEventArgs> ParseMethod;
 
-        public MethodReferenceVisitor(Assembly assembly,
-                                      TypeHandler typeHandler,
+        public MethodReferenceVisitor(TypeHandler typeHandler,
                                       DataCollector dataCollector,
                                       PdbLocator pdbLocator)
         {
-            this.assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
             this.typeHandler = typeHandler ?? throw new ArgumentNullException(nameof(typeHandler));
             this.dataCollector = dataCollector ?? throw new ArgumentNullException(nameof(dataCollector));
             this.pdbLocator = pdbLocator ?? throw new ArgumentNullException(nameof(pdbLocator));
@@ -43,7 +40,7 @@ namespace SourcetrailDotnetIndexer
         {
             var targetClassId = 0;
             // do not collect members of foreign assemblies
-            if (calledMethod.DeclaringType.Assembly == assembly)
+            if (typeHandler.ShouldCollectType(calledMethod.DeclaringType))
             {
                 targetClassId = typeHandler.AddToDbIfValid(calledMethod.DeclaringType);
             }
@@ -150,11 +147,11 @@ namespace SourcetrailDotnetIndexer
 
         public void VisitTypeReference(MethodBase originatingMethod,
                                        int ilOffsetOfReference,
-                                       Type type,
+                                       Type referencedType,
                                        int referencingMethodId,
                                        int referencingClassId)
         {
-            var targetClassId = typeHandler.AddToDbIfValid(type);
+            var targetClassId = typeHandler.AddToDbIfValid(referencedType);
             if (targetClassId > 0)
             {
                 if (referencingClassId != targetClassId)       // ignore self-references
@@ -174,7 +171,7 @@ namespace SourcetrailDotnetIndexer
         {
             var targetClassId = 0;
             // do not collect members of foreign assemblies
-            if (referencedMethod.DeclaringType.Assembly == assembly)
+            if (typeHandler.ShouldCollectType(referencedMethod.DeclaringType))
                 targetClassId = typeHandler.AddToDbIfValid(referencedMethod.DeclaringType);
             if (targetClassId > 0)
             {
