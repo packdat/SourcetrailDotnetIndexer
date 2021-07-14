@@ -42,7 +42,12 @@ Usage
 The following command-line arguments are supported:
 
 * -i `assembly-path`   
-  specifies the path to the input-assembly, from which the sourcetrail-database is generated.
+  specifies the path to the input-assembly, from which the sourcetrail-database is generated.  
+  can be specified multiple times to generate a multi-assembly-database (the `-of` switch is mandatatory in this case)
+* -if `file-path`  
+  specifies the path to a text-file that contains the paths of the assemblies to index.  
+  NOTE: when using this option, the `-of` switch is mandatory  
+  See the paragraph [Building a multi-assembly database](#Building-a-multi-assembly-database) below for details.
 * -s `search-path`  
   path to load referenced assemblies from   
   this option may be specified multiple times.  
@@ -74,6 +79,9 @@ In that case, install the runtime for Visual Studio 2019 from [this link](https:
 (make sure to install the x64 version)
 
 #### Building a multi-assembly database
+**Note:** If you don't need the fine-grained control described here, 
+you may want to skip to the [easy way](#The-easy-way).  
+
 It is a rare case that you have a single executable/dll for your application.  
 Most of the time, you have additional libraries that are used (e.g. *referenced*) by your application.  
 Since v0.2.4 *SourcetrailDotnetIndexer* is able to follow these references and include them in the generated database as well.  
@@ -97,7 +105,7 @@ If you would index the ConsoleDemo project, you would just see a single class in
 To index the assemblies referenced by *ConsoleDemo* as well, we utilize the `-fn` switch.  
 The command line would look something like this:  
 `SourcetrailDotnetCoreIndexer.exe -i ConsoleDemo.dll -o . -f ^System -fn ^Lib\d`  
-Note the `-fn` switch, here we utilize the fact that the namespaces have a common format (Lib1 to Lib3) so we use the regex-pattern `\d` that matches a single digit (a character in the rage '0' to '9').  
+Note the `-fn` switch, here we utilize the fact that the namespaces have a common format (Lib1 to Lib3) so we use the regex-pattern `\d` that matches a single digit (a character in the range '0' to '9').  
 As an alternative, we could have specified the namespaces explicitly to generate the same output:  
 `-fn ^Lib1 -fn ^Lib2 -fn ^Lib3`
 
@@ -106,7 +114,7 @@ Note: If the same pattern is specified for the `-f` AND the `-fn` switch, the `-
 If your application references more than a handful of assemblies and the namespaces of the referenced assemblies do not share a pattern that could simply be translated into a regex-pattern,
 it may be more convenient to put all these namespace-names into a single file and reference just that file when running the indexer.  
 That is the purpose of the `-ff` switch.  
-Sticking with the former example, we create a text-file with the following content:
+Sticking with the previous example, we create a text-file with the following content:
 ````
 # this is a comment
 ^Lib1
@@ -123,6 +131,45 @@ Opening the generated database in Sourcetrail now also shows classes from the re
 ![MultipleClassed](./Demo-st-02.png)  
 And displaying the caller-graph for the single method in *Lib3* shows a trail trough all our assemblies:  
 ![MultipleClassed](./Demo-st-03.png)
+
+-----------
+
+#### The easy way
+
+If you just have a bunch of assemblies and you don't know or don't care which one to use for the 
+initial one (specified with the `-i` switch), you can make your life even easier by using the `-if` switch.  
+With this switch (available since v0.2.5), you specify a text-file that contains the paths 
+to all the assemblies you want to include in the Sourcetrail-database.  
+
+To demonstrate this, we again use the previously mentioned example.  
+To keep things simple, we copy all assemblies of our solution into one folder.  
+Then we create a text-file containing the assembly-paths to our assemblies in the same folder.  
+We could create the file by hand, but we could also let a simple shell-command do this for us.  
+Open a command-prompt or PowerShell and navigate to the folder, where our assemblies are stored.  
+Execute one of these commands:
+- Command-prompt: `dir *.dll /B > asmNames.txt`  
+- PowerShell: `dir *.dll -Name > asmNames.txt`  
+
+This creates a text-file with all assembly-names for us.  
+The file should look like this:
+````
+ConsoleDemo.dll
+Lib1.dll
+Lib2.dll
+Lib3.dll
+# comments are supported, this line was added by hand (e.g. to exclude nuget-packages)
+````
+The assembly-names in this file can be specified either by full path,
+or by a path that is *relative* to the text-file. (as shown here)  
+Because we now specify all assemblies explicitly, the switches `-fn` and/or `-ff` are no longer needed.  
+On the other hand, we now have to specify the `-of` switch, as we want to create a single database for all assemblies.  
+
+The new command-line would look something like this, producing the same result in Sourcetrail as the previous approaches:  
+`SourcetrailDotnetCoreIndexer.exe -if asmNames.txt -of demo.srctrldb -f ^System`
+
+(Note, instead of using the `-if` switch, you can specify the `-i` switch multiple times, 
+but i think using a single text-file is move convenient)  
+
 
 Results
 -------

@@ -69,6 +69,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Cache.cs" />
     <Compile Include="CollectedMethod.cs" />
     <Compile Include="EventArgs.cs" />
     <Compile Include="DataCollector.cs" />

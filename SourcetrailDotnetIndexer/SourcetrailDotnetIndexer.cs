@@ -7,21 +7,16 @@ namespace SourcetrailDotnetIndexer
 {
     partial class SourcetrailDotnetIndexer
     {
-        private readonly Assembly assembly;
+        private readonly Assembly[] assemblies;
         private readonly NamespaceFilter nameFilter;
         private readonly NamespaceFilter namespaceFollowFilter;
-        private DataCollector dataCollector;
-        private TypeHandler typeHandler;
-        private MethodReferenceVisitor referenceVisitor;
-        private ILParser ilParser;
-        private PdbLocator pdbLocator;
 
         // list of methods that we have to analyze after collecting all types
         private readonly List<CollectedMethod> collectedMethods = new List<CollectedMethod>();
 
-        public SourcetrailDotnetIndexer(Assembly assembly, NamespaceFilter nameFilter, NamespaceFilter namespaceFollowFilter)
+        public SourcetrailDotnetIndexer(Assembly[] assemblies, NamespaceFilter nameFilter, NamespaceFilter namespaceFollowFilter)
         {
-            this.assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
+            this.assemblies = assemblies ?? throw new ArgumentNullException(nameof(assemblies));
             this.nameFilter = nameFilter ?? throw new ArgumentNullException(nameof(nameFilter));
             this.namespaceFollowFilter = namespaceFollowFilter ?? throw new ArgumentNullException(nameof(namespaceFollowFilter));
         }
@@ -29,52 +24,59 @@ namespace SourcetrailDotnetIndexer
         public void Index(string outputFileName)
         {
             // create the Sourcetrail data collector
-            dataCollector = new DataCollector(outputFileName);
+            var dataCollector = new DataCollector(outputFileName);
 
-            pdbLocator = new PdbLocator();
-            pdbLocator.AddAssembly(assembly);
-
+            var pdbLocator = new PdbLocator();
             // set up the type handler
-            typeHandler = new TypeHandler(assembly, nameFilter, namespaceFollowFilter, dataCollector, pdbLocator);
+            var typeHandler = new TypeHandler(assemblies, nameFilter, namespaceFollowFilter, dataCollector, pdbLocator);
             typeHandler.MethodCollected += (sender, args) => collectedMethods.Add(args.CollectedMethod);
 
-            // set up the visitor for parsed methods
-            referenceVisitor = new MethodReferenceVisitor(typeHandler, dataCollector, pdbLocator);
-            referenceVisitor.ParseMethod += (sender, args) => CollectReferencesFromILCode(
-                args.CollectedMethod.Method, args.CollectedMethod.MethodId, args.CollectedMethod.ClassId);
-
-            ilParser = new ILParser(referenceVisitor);
-
-            try
+            foreach (var assembly in assemblies)
             {
-                Console.WriteLine("Collecting types...");
-                // collect all types first
-                foreach (var type in assembly.GetTypes())
+                Console.WriteLine("Indexing assembly {0}{1}", assembly.Location, Environment.NewLine);
+
+                pdbLocator.AddAssembly(assembly);
+                try
                 {
-                    typeHandler.AddToDbIfValid(type);
+                    Console.WriteLine("Collecting types...");
+                    // collect all types first
+                    foreach (var type in assembly.GetTypes())
+                    {
+                        typeHandler.AddToDbIfValid(type);
+                    }
                 }
-                Console.WriteLine("{1}Collected {0} types{1}", typeHandler.NumCollectedTypes, Environment.NewLine);
-                // then parse IL of colected methods
-                HandleCollectedMethods();
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Exception indexing assemby '{0}'\r\n{1}", assembly.Location, ex);
+                }
             }
-            finally
-            {
-                dataCollector.Dispose();
-            }
+
+            Console.WriteLine("{1}Collected {0} types{1}", Cache.CollectedTypes.Count, Environment.NewLine);
+            
+            // set up the visitor for parsed methods
+            var referenceVisitor = new MethodReferenceVisitor(typeHandler, dataCollector, pdbLocator);
+            var ilParser = new ILParser(referenceVisitor);
+            referenceVisitor.ParseMethod += (sender, args) => CollectReferencesFromILCode(
+                ilParser,
+                args.CollectedMethod.Method, args.CollectedMethod.MethodId, args.CollectedMethod.ClassId);
+            // parse IL of colected methods
+            HandleCollectedMethods(ilParser);
+
+            dataCollector.Dispose();
         }
 
-        public void HandleCollectedMethods()
+        private void HandleCollectedMethods(ILParser ilParser)
         {
             Console.WriteLine("Parsing IL... ({0} methods){1}", collectedMethods.Count, Environment.NewLine);
-            // then dive into methods and collect, what they reference
+            // dive into methods and collect, what they reference
             for (var i = 0; i < collectedMethods.Count; i++)
             {
                 var method = collectedMethods[i];
-                CollectReferencesFromILCode(method.Method, method.MethodId, method.ClassId);
+                CollectReferencesFromILCode(ilParser, method.Method, method.MethodId, method.ClassId);
             }
         }
 
-        public void CollectReferencesFromILCode(MethodBase method, int methodId, int classId)
+        private void CollectReferencesFromILCode(ILParser ilParser, MethodBase method, int methodId, int classId)
         {
             ilParser.Parse(method, methodId, classId);
         }

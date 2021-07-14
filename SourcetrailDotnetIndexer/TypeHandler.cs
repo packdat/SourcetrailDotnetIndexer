@@ -2,6 +2,7 @@
 using SourcetrailDotnetIndexer.PdbSupport;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 namespace SourcetrailDotnetIndexer
@@ -14,50 +15,36 @@ namespace SourcetrailDotnetIndexer
         private readonly BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic |
                 BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
 
-        private readonly Assembly assembly;
+        private readonly Assembly[] assemblies;
         private readonly NamespaceFilter nameFilter;
         private readonly NamespaceFilter namespaceFollowFilter;
         private readonly DataCollector dataCollector;
         private readonly PdbLocator pdbLocator;
-
-        // the collected namespaces
-        private readonly Dictionary<string, int> namespaces = new Dictionary<string, int>();
-        // used to speed things up
-        // maps an interface type to the classes that implement that interface
-        private readonly Dictionary<Type, List<Type>> interfaceImplementations = new Dictionary<Type, List<Type>>();
-        // the types that are already collected with their symbolId
-        private readonly Dictionary<Type, int> collectedTypes = new Dictionary<Type, int>();
-        // the assemblies that we have followed
-        private readonly Dictionary<Assembly, int> collectedAssemblies = new Dictionary<Assembly, int>();
-
-        /// <summary>
-        /// Gets the number of found types
-        /// </summary>
-        public int NumCollectedTypes { get { return collectedTypes.Count; } }
 
         /// <summary>
         /// Invoked when a method or constructor is found
         /// </summary>
         public EventHandler<CollectedMethodEventArgs> MethodCollected;
 
-        public TypeHandler(Assembly assembly,
+        public TypeHandler(Assembly[] assemblies,
                            NamespaceFilter nameFilter,
                            NamespaceFilter namespaceFollowFilter,
                            DataCollector dataCollector,
                            PdbLocator pdbLocator)
         {
-            this.assembly = assembly;
+            this.assemblies = assemblies;
             this.nameFilter = nameFilter;
             this.namespaceFollowFilter = namespaceFollowFilter;
             this.dataCollector = dataCollector;
             this.pdbLocator = pdbLocator;
 
-            collectedAssemblies.Add(assembly, 1);
+            foreach (var assembly in assemblies)
+                Cache.CollectedAssemblies.Add(assembly, 1);
         }
 
         public Type[] GetInterfaceImplementors(Type interfaceType)
         {
-            return interfaceImplementations.TryGetValue(interfaceType, out var implementors)
+            return Cache.InterfaceImplementations.TryGetValue(interfaceType, out var implementors)
                 ? implementors.ToArray()
                 : Array.Empty<Type>();
         }
@@ -68,7 +55,7 @@ namespace SourcetrailDotnetIndexer
                 type = type.GetElementType();
 
             // may already be collected
-            if (collectedTypes.TryGetValue(type, out var typeId))
+            if (Cache.CollectedTypes.TryGetValue(type, out var typeId))
                 return typeId;
 
             if (type.IsGenericParameter
@@ -82,10 +69,10 @@ namespace SourcetrailDotnetIndexer
 
         private int AddToDb(Type type)
         {
-            if (!namespaces.TryGetValue(type.Namespace, out _))
+            if (!Cache.Namespaces.TryGetValue(type.Namespace, out _))
             {
                 var nsId = dataCollector.CollectSymbol(type.Namespace, SymbolKind.SYMBOL_NAMESPACE);
-                namespaces.Add(type.Namespace, nsId);
+                Cache.Namespaces.Add(type.Namespace, nsId);
             }
 
             var name = type.GetPrettyName();
@@ -131,24 +118,24 @@ namespace SourcetrailDotnetIndexer
         {
             return type != null
                 && nameFilter.IsValid(type.Namespace)
-                && (type.Assembly == assembly || namespaceFollowFilter.Matches(type.Namespace));
+                && (assemblies.Any(asm => asm == type.Assembly) || namespaceFollowFilter.Matches(type.Namespace));
         }
 
 
         private void CollectTypeMembers(Type type, int typeSymbolId)
         {
             // skip, if already collected
-            if (collectedTypes.ContainsKey(type))
+            if (Cache.CollectedTypes.ContainsKey(type))
                 return;
 
-            if (!collectedAssemblies.ContainsKey(type.Assembly))
+            if (!Cache.CollectedAssemblies.ContainsKey(type.Assembly))
             {
                 Console.WriteLine("Following {0}", type.Assembly.Location);
-                collectedAssemblies.Add(type.Assembly, 1);
+                Cache.CollectedAssemblies.Add(type.Assembly, 1);
                 pdbLocator.AddAssembly(type.Assembly);
             }
 
-            collectedTypes[type] = typeSymbolId;
+            Cache.CollectedTypes[type] = typeSymbolId;
 
             if (type.BaseType != null)
             {
@@ -171,10 +158,10 @@ namespace SourcetrailDotnetIndexer
                 {
                     dataCollector.CollectReference(typeSymbolId, ifaceId, ReferenceKind.REFERENCE_INHERITANCE);
 
-                    if (!interfaceImplementations.TryGetValue(iface, out var implementors))
+                    if (!Cache.InterfaceImplementations.TryGetValue(iface, out var implementors))
                     {
                         implementors = new List<Type>();
-                        interfaceImplementations[iface] = implementors;
+                        Cache.InterfaceImplementations[iface] = implementors;
                     }
                     if (!implementors.Contains(type))
                         implementors.Add(type);

@@ -12,7 +12,7 @@ namespace SourcetrailDotnetIndexer
 
     partial class Program
     {
-        static string startAssembly;
+        static string[] assemblyPaths;
         static string[] assemblySearchPaths;
         static string[] nameFilters;
         static string[] namespacesToFollow;
@@ -26,10 +26,17 @@ namespace SourcetrailDotnetIndexer
         static void Usage()
         {
             var versionInfo = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
+            Console.WriteLine();
             Console.WriteLine("SourcetrailDotnetIndexer v{0}.{1}", versionInfo.FileMajorPart, versionInfo.FileMinorPart);
             Console.WriteLine("Arguments:");
             Console.WriteLine(" -i  InputAssembly");
             Console.WriteLine("     Specifies the full path of the assembly to index");
+            Console.WriteLine("     May be specified multiple times (the -of switch is required in this case)");
+            Console.WriteLine(" -if File Path");
+            Console.WriteLine("     Specifies the path to a text-file with assembly-paths to index");
+            Console.WriteLine("     This may be more convenient than specifying multiple assemblies with the -i switch");
+            Console.WriteLine("     Every line in the specified file contains a path to an assembly");
+            Console.WriteLine("     NOTE: This also requires the -of switch");
             Console.WriteLine(" -o  OutputPath");
             Console.WriteLine("     Specifies the name of the folder, where the output will be generated");
             Console.WriteLine("     The output filename is always the input filename with the extension .srctrldb");
@@ -59,17 +66,20 @@ namespace SourcetrailDotnetIndexer
         private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
         {
             var asmName = new AssemblyName(args.Name);
-            var path = Path.GetDirectoryName(startAssembly);
-            var asmPath = Path.Combine(path, asmName.Name + ".dll");
-            if (File.Exists(asmPath))
+            foreach (var assemblyPath in assemblyPaths)
             {
-                Console.WriteLine("Load: {0}", asmPath);
-                var asm = assemblyLoader(asmPath);
-                return asm;
+                var path = Path.GetDirectoryName(assemblyPath);
+                var asmPath = Path.Combine(path, asmName.Name + ".dll");
+                if (File.Exists(asmPath))
+                {
+                    Console.WriteLine("Load: {0}", asmPath);
+                    var asm = assemblyLoader(asmPath);
+                    return asm;
+                }
             }
             foreach (var basePath in assemblySearchPaths)
             {
-                asmPath = Path.Combine(basePath, asmName.Name + ".dll");
+                var asmPath = Path.Combine(basePath, asmName.Name + ".dll");
                 if (File.Exists(asmPath))
                 {
                     Console.WriteLine("Load: {0}", asmPath);
@@ -84,6 +94,7 @@ namespace SourcetrailDotnetIndexer
 
         private static bool ProcessCommandLine(string[] args)
         {
+            var assemblyPathList = new List<string>();
             var searchPaths = new List<string>();
             var filters = new List<string>();
             var followFilters = new List<string>();
@@ -98,7 +109,29 @@ namespace SourcetrailDotnetIndexer
                     case "i":   // input assembly
                         i++;
                         if (i < args.Length)
-                            startAssembly = args[i];
+                            assemblyPathList.Add(args[i]);
+                        else
+                            return false;
+                        break;
+                    case "if":  // text-file with assembly-names
+                        i++;
+                        if (i < args.Length)
+                        {
+                            if (!File.Exists(args[i]))
+                            {
+                                Console.WriteLine("The file '{0}' does not exist", args[i]);
+                                return false;
+                            }
+                            assemblyPathList.AddRange(ReadTextFile(args[i]));
+                            for (var t = 0; t < assemblyPathList.Count; t++)
+                            {
+                                var p = assemblyPathList[t];
+                                // if entry is not a full path, create a path relative to the specified text-file
+                                if (!Path.IsPathRooted(p))
+                                    p = Path.Combine(Path.GetDirectoryName(args[i]), p);
+                                assemblyPathList[t] = p;
+                            }
+                        }
                         else
                             return false;
                         break;
@@ -160,12 +193,23 @@ namespace SourcetrailDotnetIndexer
                 }
                 i++;
             }
+            assemblyPaths = assemblyPathList.ToArray();
             assemblySearchPaths = searchPaths.ToArray();
             nameFilters = filters.Count > 0 ? filters.ToArray() : null;
             namespacesToFollow = followFilters.Count > 0 ? followFilters.ToArray() : null;
 
-            return !string.IsNullOrWhiteSpace(startAssembly) 
-                && (!string.IsNullOrWhiteSpace(outputPath) || !string.IsNullOrWhiteSpace(outputPathAndFilename));
+            if (assemblyPathList.Count > 0 && string.IsNullOrWhiteSpace(outputPathAndFilename))
+            {
+                Console.WriteLine("When specifying multiple assemblies, the -of switch is mandatory");
+                return false;
+            }
+            if (assemblyPathList.Count == 0)
+            {
+                Console.WriteLine("No assemblies specified");
+                return false;
+            }
+
+            return !string.IsNullOrWhiteSpace(outputPath) || !string.IsNullOrWhiteSpace(outputPathAndFilename);
         }
 
         protected static IEnumerable<string> ReadTextFile(string filePath)
