@@ -78,7 +78,9 @@ your system may be missing the Visual C++ Runtime required by the native *Source
 In that case, install the runtime for Visual Studio 2019 from [this link](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads).  
 (make sure to install the x64 version)
 
-#### Building a multi-assembly database
+-------
+
+### Building a multi-assembly database
 **Note:** If you don't need the fine-grained control described here, 
 you may want to skip to the [easy way](#The-easy-way).  
 
