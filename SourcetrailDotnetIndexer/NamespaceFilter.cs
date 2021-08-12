@@ -27,6 +27,9 @@ namespace SourcetrailDotnetIndexer
         /// <returns>true, if none of the patterns matches <b><paramref name="name"/></b> otherwise false</returns>
         public bool IsValid(string name)
         {
+            if (name is null)
+                return false;
+
             foreach (var pattern in filterPatterns)
             {
                 if (Regex.IsMatch(name, pattern, RegexOptions.IgnoreCase))

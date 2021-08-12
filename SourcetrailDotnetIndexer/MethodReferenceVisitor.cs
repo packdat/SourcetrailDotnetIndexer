@@ -191,11 +191,10 @@ namespace SourcetrailDotnetIndexer
             // attempt to detect inline lambdas (e.g. foo.Select(item => bar(item))
             // or lambda methods in a compiler-generated class
             // NOTE: not sure, if we should collect it here, as we have only a REFERENCE to a method, not a method-call
-            // (do not collect for now)
-            //if (referencedMethod.IsLambdaOf(originatingMethod))
-            //{
-            //    ParseMethod?.Invoke(this, new CollectedMethodEventArgs(new CollectedMethod(referencedMethod, methodId, classId)));
-            //}
+            if (referencedMethod.IsLambdaOf(originatingMethod))
+            {
+                ParseMethod?.Invoke(this, new CollectedMethodEventArgs(new CollectedMethod(referencedMethod, referencingMethodId, referencingClassId)));
+            }
         }
 
         private void CollectReferenceLocation(MethodBase referencingMethod, int referenceId, int ilOffsetOfReference)

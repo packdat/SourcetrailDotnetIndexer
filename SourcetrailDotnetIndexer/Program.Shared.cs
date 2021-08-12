@@ -198,7 +198,7 @@ namespace SourcetrailDotnetIndexer
             nameFilters = filters.Count > 0 ? filters.ToArray() : null;
             namespacesToFollow = followFilters.Count > 0 ? followFilters.ToArray() : null;
 
-            if (assemblyPathList.Count > 0 && string.IsNullOrWhiteSpace(outputPathAndFilename))
+            if (assemblyPathList.Count > 1 && string.IsNullOrWhiteSpace(outputPathAndFilename))
             {
                 Console.WriteLine("When specifying multiple assemblies, the -of switch is mandatory");
                 return false;
