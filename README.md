@@ -56,6 +56,10 @@ The following command-line arguments are supported:
   a string (in regex-format) to specify namespaces, that should be ignored when generating the database.   
   this option may be specified multiple times.   
   e.g. `-f ^System -f ^Microsoft`
+* -ami (short for `All-Method-Invocations`)  
+  If specified, collects all methods which are invoked from already collected methods,
+  even if they would normally be ignored, because they reside in a foreign assembly.  
+  This is useful when you don't want to include the `System` namespace, but still want to see invocations of e.g. `Console.WriteLine` from your code. 
 * -fn `name-filter`  
   See the paragraph [Building a multi-assembly database](#Building-a-multi-assembly-database) below for details.
 * -ff `file-name`  
