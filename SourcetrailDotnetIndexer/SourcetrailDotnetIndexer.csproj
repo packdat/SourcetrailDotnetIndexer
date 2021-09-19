@@ -73,6 +73,7 @@
     <Compile Include="CollectedMethod.cs" />
     <Compile Include="EventArgs.cs" />
     <Compile Include="DataCollector.cs" />
+    <Compile Include="GlobalOptions.cs" />
     <Compile Include="ILParser.cs" />
     <Compile Include="MethodReferenceVisitor.cs" />
     <Compile Include="PdbSupport\CodeSequence.cs" />

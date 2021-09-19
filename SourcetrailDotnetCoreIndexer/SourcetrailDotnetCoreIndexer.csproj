@@ -21,6 +21,7 @@
     <Compile Include="..\SourcetrailDotnetIndexer\CollectedMethod.cs" Link="CollectedMethod.cs" />
     <Compile Include="..\SourcetrailDotnetIndexer\DataCollector.cs" Link="DataCollector.cs" />
     <Compile Include="..\SourcetrailDotnetIndexer\EventArgs.cs" Link="EventArgs.cs" />
+    <Compile Include="..\SourcetrailDotnetIndexer\GlobalOptions.cs" Link="GlobalOptions.cs" />
     <Compile Include="..\SourcetrailDotnetIndexer\ILParser.cs" Link="ILParser.cs" />
     <Compile Include="..\SourcetrailDotnetIndexer\MethodReferenceVisitor.cs" Link="MethodReferenceVisitor.cs" />
     <Compile Include="..\SourcetrailDotnetIndexer\NameHelper.cs" Link="NameHelper.cs" />

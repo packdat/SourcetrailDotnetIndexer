@@ -39,13 +39,18 @@ namespace SourcetrailDotnetIndexer
                                     int referencingClassId)
         {
             var targetClassId = 0;
+            var limitedReference = false;
             // do not collect members of foreign assemblies
-            if (typeHandler.ShouldCollectType(calledMethod.DeclaringType))
+            var topReferencedType = calledMethod.GetTopmostNonGeneratedType();
+            if (typeHandler.ShouldCollectType(topReferencedType))
+                targetClassId = typeHandler.AddToDbIfValid(topReferencedType);
+            if (targetClassId == 0 && GlobalOptions.CollectAllInvocations)
             {
-                targetClassId = typeHandler.AddToDbIfValid(calledMethod.DeclaringType);
+                targetClassId = typeHandler.AddToDb(topReferencedType, true);
+                limitedReference = true;
             }
             // check, if this is an async method
-            if (targetClassId == 0 && calledMethod.DeclaringType.IsAsyncStateMachineOf(originatingMethod, out var asyncWorker))
+            if (calledMethod.DeclaringType.IsAsyncStateMachineOf(originatingMethod, out var asyncWorker))
             {
                 // dive into the async worker, as that is where the "meat" of the method is
                 ParseMethod?.Invoke(this, new CollectedMethodEventArgs(new CollectedMethod(asyncWorker, referencingMethodId, referencingClassId)));
@@ -73,7 +78,7 @@ namespace SourcetrailDotnetIndexer
                     var refId = dataCollector.CollectReference(referencingMethodId, targetClassId, ReferenceKind.REFERENCE_TYPE_USAGE);
                     CollectReferenceLocation(originatingMethod, refId, ilOffsetOfCall);
                 }
-                var targetMethodId = typeHandler.CollectMember(calledMethod, out var targetKind);
+                var targetMethodId = typeHandler.CollectMember(calledMethod, limitedReference, out var targetKind);
                 if (targetMethodId > 0)
                 {
                     var refId = dataCollector.CollectReference(referencingMethodId, targetMethodId,
@@ -99,7 +104,7 @@ namespace SourcetrailDotnetIndexer
                         // use correct overload
                         if (implMethod.Name == calledMethod.Name && implMethod.HasSameParameters(calledMethod))
                         {
-                            var implMethodId = typeHandler.CollectMember(implMethod, out var targetImplKind);
+                            var implMethodId = typeHandler.CollectMember(implMethod, limitedReference, out var targetImplKind);
                             var refId = dataCollector.CollectReference(referencingMethodId, implMethodId,
                                 targetImplKind == SymbolKind.SYMBOL_METHOD ? ReferenceKind.REFERENCE_CALL : ReferenceKind.REFERENCE_USAGE);
                             CollectReferenceLocation(originatingMethod, refId, ilOffsetOfCall);
@@ -125,7 +130,7 @@ namespace SourcetrailDotnetIndexer
                     var refId = dataCollector.CollectReference(referencingMethodId, targetClassId, ReferenceKind.REFERENCE_TYPE_USAGE);
                     CollectReferenceLocation(originatingMethod, refId, ilOffsetOfReference);
                 }
-                var fieldId = typeHandler.CollectMember(referencedField, out _);
+                var fieldId = typeHandler.CollectMember(referencedField, false, out _);
                 if (fieldId > 0)
                 {
                     //dataCollector.CollectReference(classId, fieldId, ReferenceKind.REFERENCE_USAGE);
@@ -152,6 +157,8 @@ namespace SourcetrailDotnetIndexer
                                        int referencingClassId)
         {
             var targetClassId = typeHandler.AddToDbIfValid(referencedType);
+            if (targetClassId == 0 && GlobalOptions.CollectAllTypesReferencedByMethods)
+                targetClassId = typeHandler.AddToDb(referencedType, true);
             if (targetClassId > 0)
             {
                 if (referencingClassId != targetClassId)       // ignore self-references
@@ -170,9 +177,16 @@ namespace SourcetrailDotnetIndexer
                                          int referencingClassId)
         {
             var targetClassId = 0;
+            var limitedReference = false;
             // do not collect members of foreign assemblies
-            if (typeHandler.ShouldCollectType(referencedMethod.DeclaringType))
-                targetClassId = typeHandler.AddToDbIfValid(referencedMethod.DeclaringType);
+            var topReferencedType = referencedMethod.GetTopmostNonGeneratedType();
+            if (typeHandler.ShouldCollectType(topReferencedType))
+                targetClassId = typeHandler.AddToDbIfValid(topReferencedType);
+            if (targetClassId == 0 && GlobalOptions.CollectAllInvocations)
+            {
+                targetClassId = typeHandler.AddToDb(topReferencedType, true);
+                limitedReference = true;
+            }
             if (targetClassId > 0)
             {
                 if (referencingClassId != targetClassId)       // ignore self-references
@@ -181,7 +195,7 @@ namespace SourcetrailDotnetIndexer
                     var refId = dataCollector.CollectReference(referencingMethodId, targetClassId, ReferenceKind.REFERENCE_TYPE_USAGE);
                     CollectReferenceLocation(originatingMethod, refId, ilOffsetOfReference);
                 }
-                var targetMethodId = typeHandler.CollectMember(referencedMethod, out _);
+                var targetMethodId = typeHandler.CollectMember(referencedMethod, limitedReference, out _);
                 if (targetMethodId > 0)
                 {
                     var refId = dataCollector.CollectReference(referencingMethodId, targetMethodId, ReferenceKind.REFERENCE_USAGE);

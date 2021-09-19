@@ -3,6 +3,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -62,13 +63,7 @@ namespace SourcetrailDotnetIndexer
                 throw new ArgumentNullException(nameof(outerMethod));
 
             var match = rxInternName.Match(method.Name);
-            // 2 cases:
-            // 1. the method is generated in the same class as outerMethod
-            // 2. the method is generated in a nested class in the same class as outerMethod
-            return match.Success
-                && match.Groups["name"].Value.Equals(outerMethod.Name)
-                && (method.DeclaringType == outerMethod.DeclaringType
-                || method.DeclaringType.DeclaringType == outerMethod.DeclaringType);
+            return match.Success && (method.GetTopmostNonGeneratedType() == outerMethod.GetTopmostNonGeneratedType());
         }
 
         /// <summary>
@@ -183,6 +178,43 @@ namespace SourcetrailDotnetIndexer
         }
 
         /// <summary>
+        /// Returns the type that is at the top of the nesting-hierarchy for the specified class-member
+        /// </summary>
+        /// <returns>The <see cref="Type"/>, that is at the top of the nesting-hierarchy for the specified class-member</returns>
+        public static Type GetTopmostNonGeneratedType(this MemberInfo member)
+        {
+            var type = member.DeclaringType;
+            while (type.DeclaringType != null && type.IsCompilerGenerated())
+                type = type.DeclaringType;
+            return type;
+        }
+
+        /// <summary>
+        /// Determines, whether this type is compiler-generated
+        /// </summary>
+        /// <param name="type">The <see cref="Type"/> to check</param>
+        /// <returns>true, if this type is compiler-generated, otherwise false</returns>
+        public static bool IsCompilerGenerated(this Type type)
+        {
+            while (type != null)
+            {
+                if (type.IsDefined(typeof(CompilerGeneratedAttribute)))
+                    return true;
+                type = type.DeclaringType;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Determines, whether the specified <paramref name="member"/> is declared in a compiler-generated class
+        /// </summary>
+        /// <returns>true, if <paramref name="member"/> is declared in a compiler-generated class, otherwise false</returns>
+        public static bool IsMemberOfCompilerGeneratedClass(this MemberInfo member)
+        {
+            return member.DeclaringType.IsCompilerGenerated();
+        }
+
+        /// <summary>
         /// Returns the "pretty" name of this <see cref="MemberInfo"/> (including the full type-name)
         /// and also return the member-type (if any) into <b>prefix</b> and method-parameters (if any) into <b>postfix</b>
         /// </summary>
@@ -202,7 +234,7 @@ namespace SourcetrailDotnetIndexer
             memberKind = SymbolKind.SYMBOL_FIELD;
             prefix = "";
             postfix = "";
-            if (member.Name.Contains("<"))  // compiler-generated
+            if (member.Name.Contains("<") || member.IsMemberOfCompilerGeneratedClass())  // compiler-generated
                 return null;
 
             if (member is ConstructorInfo ctor)

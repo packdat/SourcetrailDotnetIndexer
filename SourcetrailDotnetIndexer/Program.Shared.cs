@@ -49,6 +49,12 @@ namespace SourcetrailDotnetIndexer
             Console.WriteLine(" -f  Namespace Filter");
             Console.WriteLine("     Specifies a regex that is used to exclude types from matching namespaces");
             Console.WriteLine("     This switch can be used multiple times");
+            Console.WriteLine(" -ami");
+            Console.WriteLine("     If specified, collects all methods which are invoked from collected methods,");
+            Console.WriteLine("     even if they would normally be ignored, because they reside in a foreign assembly.");
+            Console.WriteLine(" -amt");
+            Console.WriteLine("     If specified, collects all types which are referenced from collected methods,");
+            Console.WriteLine("     even if they would normally be ignored, because they reside in a foreign assembly.");
             Console.WriteLine(" -fn Namespace Filter");
             Console.WriteLine("     Specifies a regex that specifies namespaces that are allowed to be followed");
             Console.WriteLine("     (by default, only types from the InputAssembly are collected");
@@ -187,8 +193,14 @@ namespace SourcetrailDotnetIndexer
                     case "w":
                         waitAtEnd = true;
                         break;
+                    case "ami":
+                        GlobalOptions.CollectAllInvocations = true;
+                        break;
+                    case "amt":
+                        GlobalOptions.CollectAllTypesReferencedByMethods = true;
+                        break;
                     default:
-                        Console.WriteLine("Unrecognized argument: {0}", arg);
+                        Console.WriteLine("Unrecognized argument: {0}", args[i]);
                         break;
                 }
                 i++;

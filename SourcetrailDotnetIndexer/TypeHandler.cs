@@ -67,7 +67,7 @@ namespace SourcetrailDotnetIndexer
             return AddToDb(type);
         }
 
-        private int AddToDb(Type type)
+        public int AddToDb(Type type, bool skipMembers = false)
         {
             if (!Cache.Namespaces.TryGetValue(type.Namespace, out _))
             {
@@ -91,7 +91,7 @@ namespace SourcetrailDotnetIndexer
                 kind = SymbolKind.SYMBOL_ANNOTATION;
 
             var classId = dataCollector.CollectSymbol(name, kind);
-            if (classId > 0)
+            if (classId > 0 && !skipMembers)
             {
                 foreach (var genType in type.GetGenericArguments())
                 {
@@ -177,7 +177,7 @@ namespace SourcetrailDotnetIndexer
             // collect all members of this type
             foreach (var member in type.GetMembers(flags))
             {
-                var memberId = CollectMember(member, out _);
+                var memberId = CollectMember(member, false, out _);
                 if (memberId <= 0)
                     continue;
 
@@ -215,7 +215,7 @@ namespace SourcetrailDotnetIndexer
                 }
                 else if (member is TypeInfo nestedType)
                 {
-                    if (!nestedType.Name.Contains("<"))     // ignore compiler-generated classes
+                    if (!nestedType.IsCompilerGenerated())     // ignore compiler-generated classes
                         AddToDb(nestedType);
                 }
             }
@@ -224,14 +224,15 @@ namespace SourcetrailDotnetIndexer
         /// <summary>
         /// Stores a type-member into the sourcetrail database
         /// </summary>
+        /// <param name="bare">if true, only the bare member is collected, without attribute-info</param>
         /// <returns>The symbol-id of this member</returns>
-        public int CollectMember(MemberInfo member, out SymbolKind memberKind)
+        public int CollectMember(MemberInfo member, bool bare, out SymbolKind memberKind)
         {
             if (member is MethodInfo mi && mi.IsGenericMethod)
                 member = mi.GetGenericMethodDefinition();
             var name = member.GetPrettyName(out SymbolKind kind, out string prefix, out string postfix);
             var memberId = name == null ? 0 : dataCollector.CollectSymbol(name, kind, prefix, postfix);
-            if (memberId > 0)
+            if (memberId > 0 && !bare)
             {
                 foreach (var att in member.GetCustomAttributesData())
                 {
