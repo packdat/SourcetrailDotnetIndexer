@@ -10,6 +10,8 @@ namespace SourcetrailDotnetIndexer
     /// </summary>
     static class NameHelper
     {
+        public const string GlobalNamespace = "__GLOBAL__";
+
         private static readonly Dictionary<Type, string> nameMap = new Dictionary<Type, string>
         {
             { typeof(void), "void" },
@@ -51,10 +53,11 @@ namespace SourcetrailDotnetIndexer
         /// </summary>
         public static string MakePrettyName(Type type, bool nameOnly = false)
         {
+            var ns = type.Namespace ?? GlobalNamespace;
             var genericArguments = type.GetGenericArguments();
             var typeDefeninition = type.IsGenericParameter || nameOnly
                 ? type.Name
-                : type.Namespace + "." + (type.DeclaringType != null ? type.DeclaringType.Name + "." : "") + type.Name;
+                : ns + "." + (type.DeclaringType != null ? type.DeclaringType.Name + "." : "") + type.Name;
             if (genericArguments.Length == 0 || typeDefeninition.IndexOf("`") < 0)
             {
                 return typeDefeninition;

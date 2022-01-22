@@ -52,7 +52,14 @@ namespace SourcetrailDotnetIndexer
             }
 
             Console.WriteLine("{1}Collected {0} types{1}", Cache.CollectedTypes.Count, Environment.NewLine);
-            
+
+            if (typeHandler.SkippedGlobalTypeCount > 0)
+            {
+                Console.WriteLine("{0} global type(s) were skipped during indexing", typeHandler.SkippedGlobalTypeCount);
+                Console.WriteLine("If you want to include these types, specify the -ag switch");
+                Console.WriteLine();
+            }
+
             // set up the visitor for parsed methods
             var referenceVisitor = new MethodReferenceVisitor(typeHandler, dataCollector, pdbLocator);
             var ilParser = new ILParser(referenceVisitor);

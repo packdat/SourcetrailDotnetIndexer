@@ -64,6 +64,8 @@ namespace SourcetrailDotnetIndexer
             Console.WriteLine("     Specifies the path to a text-file with namespaces that are allowed to be followed");
             Console.WriteLine("     This may be more convenient than specifying multiple namespaces with the -fn switch");
             Console.WriteLine("     Every line in the specified file contains a regex matching one or more namespaces");
+            Console.WriteLine(" -ag");
+            Console.WriteLine("     Allows collecting types from the global namespace, which are skipped by default");
             Console.WriteLine(" -w");
             Console.WriteLine("     If specified, waits for the user to press enter before exiting");
             Console.WriteLine("     Intended when running from inside VS to keep the console-window open");
@@ -198,6 +200,9 @@ namespace SourcetrailDotnetIndexer
                         break;
                     case "amt":
                         GlobalOptions.CollectAllTypesReferencedByMethods = true;
+                        break;
+                    case "ag":
+                        GlobalOptions.AllowGlobalTypes = true;
                         break;
                     default:
                         Console.WriteLine("Unrecognized argument: {0}", args[i]);

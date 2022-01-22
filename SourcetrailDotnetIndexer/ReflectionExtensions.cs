@@ -198,7 +198,7 @@ namespace SourcetrailDotnetIndexer
         {
             while (type != null)
             {
-                if (type.IsDefined(typeof(CompilerGeneratedAttribute)))
+                if (type.GetCustomAttributesData().Any(ca => ca.AttributeType == typeof(CompilerGeneratedAttribute)))
                     return true;
                 type = type.DeclaringType;
             }

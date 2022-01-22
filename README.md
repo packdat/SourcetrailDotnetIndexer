@@ -35,7 +35,8 @@ If you need more control over where to locate the PDB-files, please open an issu
 
 Building
 --------
-Open the `.sln` in VisualStudio and build.
+Open the `.sln` in VisualStudio and build.  
+Make sure, you set the target-platform to `x64` ! (because of the native SourcetrailDB.dll)
 
 Usage
 -----
@@ -72,6 +73,9 @@ The following command-line arguments are supported:
 * -of `output-filename`  
   full path and filename of the generated database  
   If both `-o` and `-of` are specified, `-of` takes precedence.
+* -ag  
+  Allows indexing types from the *global* namespace (types which have no namespace) which are skipped by default  
+  In Sourcetrail, these types will be listed under the `__Global__` namespace  
 * -w  
   if specified, waits for the user to press enter before exiting.  
   intended when running from inside VS to keep the console-window open.
