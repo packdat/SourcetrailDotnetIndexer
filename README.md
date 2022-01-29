@@ -1,4 +1,7 @@
-﻿What
+﻿This tool has now an offspring that parses C# code to generate Sourcetrail-databases.  
+Check out [SourcetrailCSharpIndexer](https://github.com/packdat/SourcetrailCSharpIndexer) !
+
+What
 ----
 **SourcetrailDotnetIndexer** is a command-line tool that takes a .NET assembly as input and generates a database that can be loaded with [Sourcetrail](https://www.sourcetrail.com/).  
 It uses reflection to collect all types from the assembly and also parses the IL-Code of methods.
